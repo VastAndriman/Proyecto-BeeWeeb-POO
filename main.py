@@ -128,7 +128,14 @@ class BeeWeekApp(ctk.CTk):
     def cambiar_vista(self, nombre_vista):
         for vista in self.vistas.values():
             vista.pack_forget()
-        self.vistas[nombre_vista].pack(fill="both", expand=True)
+        vista_activa = self.vistas[nombre_vista]
+        vista_activa.pack(fill="both", expand=True)
+        if hasattr(vista_activa, "cargar_datos_dinamicos"):
+            vista_activa.cargar_datos_dinamicos()
+        elif hasattr(vista_activa, "cargar_horarios"):
+            vista_activa.cargar_horarios()
+        elif hasattr(vista_activa, "cargar_aulas"):
+            vista_activa.cargar_aulas()
 
 if __name__ == "__main__":
     app = BeeWeekApp()

@@ -58,9 +58,9 @@ class CalendarioView(ctk.CTkFrame):
             horarios = res.data if res.data else []
             
             for h in horarios:
-                dia_str = h.get("dia_semana", "").strip().capitalize()
-                hora_str = h.get("hora_inicio", "")
-                materia = h.get("materia", "Clase Registrada")
+                dia_str = str(h.get("dia") or h.get("dia_semana") or "").strip().capitalize()
+                hora_str = str(h.get("hora_inicio", "")).strip()[:5]
+                materia = h.get("materia") or f"Materia {h.get('materia_id', '')}"
                 aula = h.get("aula_id", "Aula")
                 
                 if dia_str in self.dias:

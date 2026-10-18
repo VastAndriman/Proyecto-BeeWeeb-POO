@@ -2,6 +2,79 @@ from conexion.supabase_client import SupabaseConnection
 
 class HorarioController:
     @staticmethod
+    def normalizar_hora(h_str):
+        if not h_str:
+            return ""
+        parts = str(h_str).strip().split(":")
+        if len(parts) >= 2:
+            return f"{parts[0].zfill(2)}:{parts[1].zfill(2)}"
+        return str(h_str).strip()
+
+    @staticmethod
+    def obtener_aulas():
+        try:
+            client = SupabaseConnection.get_client()
+            res = client.table("aulas").select("*").execute()
+            return res.data if res.data else []
+        except Exception:
+            return []
+
+    @staticmethod
+    def obtener_docentes():
+        try:
+            client = SupabaseConnection.get_client()
+            res = client.table("docentes").select("*").execute()
+            return res.data if res.data else []
+        except Exception:
+            return []
+
+    @staticmethod
+    def obtener_materias():
+        try:
+            client = SupabaseConnection.get_client()
+            res = client.table("materias").select("*").execute()
+            if res.data:
+                return res.data
+        except Exception:
+            pass
+        # Asignaturas predeterminadas si la tabla no está creada
+        return [
+            {"id": 1, "nombre": "Programación Orientada a Objetos"},
+            {"id": 2, "nombre": "Estructura de Datos"},
+            {"id": 3, "nombre": "Base de Datos"},
+            {"id": 4, "nombre": "Ingeniería de Software"},
+            {"id": 5, "nombre": "Redes y Conectividad"},
+            {"id": 6, "nombre": "Sistemas Operativos"}
+        ]
+
+    @staticmethod
+    def obtener_cursos():
+        try:
+            client = SupabaseConnection.get_client()
+            res = client.table("cursos").select("*").execute()
+            if res.data:
+                return res.data
+        except Exception:
+            pass
+        # Cursos predeterminados si la tabla no está creada
+        return [
+            {"id": 101, "nombre": "Curso 101 - Paralelo A"},
+            {"id": 102, "nombre": "Curso 102 - Paralelo B"},
+            {"id": 201, "nombre": "Curso 201 - Paralelo A"},
+            {"id": 202, "nombre": "Curso 202 - Paralelo B"},
+            {"id": 301, "nombre": "Curso 301 - Paralelo A"}
+        ]
+
+    @staticmethod
+    def obtener_horarios_registrados():
+        try:
+            client = SupabaseConnection.get_client()
+            res = client.table("horarios").select("*").execute()
+            return res.data if res.data else []
+        except Exception:
+            return []
+
+    @staticmethod
     def validar_y_crear_horario(dia, hora_inicio, hora_fin, materia_id, docente_id, aula_id, curso_id, num_estudiantes):
         client = SupabaseConnection.get_client()
         
@@ -10,18 +83,21 @@ class HorarioController:
         if aula_res.data:
             capacidad_aula = aula_res.data[0]['capacidad']
             if capacidad_aula < num_estudiantes:
-                return False, "Error: El aforo del aula es insuficiente para la cantidad de estudiantes."
+                return False, f"Error: Aforo insuficiente. El aula tiene capacidad para {capacidad_aula} estudiantes, pero se ingresaron {num_estudiantes}."
 
         # 2. Consultar horarios existentes para validar cruces concurrentes
         horarios_existentes = client.table("horarios").select("*").eq("dia", dia).execute()
+        h_inicio_norm = HorarioController.normalizar_hora(hora_inicio)
         
-        for h in horarios_existentes.data:
+        for h in (horarios_existentes.data or []):
+            h_inicio_existente = HorarioController.normalizar_hora(h.get('hora_inicio'))
+            
             # Validación de Docente: Docente_Disponible == True
-            if h['docente_id'] == docente_id and h['hora_inicio'] == hora_inicio:
+            if str(h.get('docente_id')) == str(docente_id) and h_inicio_existente == h_inicio_norm:
                 return False, "Conflicto: El docente ya tiene una clase asignada en este bloque horario."
             
             # Validación de Aula: Aula_Ocupada == False
-            if h['aula_id'] == aula_id and h['hora_inicio'] == hora_inicio:
+            if str(h.get('aula_id')) == str(aula_id) and h_inicio_existente == h_inicio_norm:
                 return False, "Conflicto: El aula ya se encuentra reservada en este bloque horario."
 
         # 3. Si pasa todas las validaciones, se registra el horario en Supabase
@@ -36,4 +112,4 @@ class HorarioController:
         }
         
         client.table("horarios").insert(nuevo_horario).execute()
-        return True, "Horario creado exitosamente sin cruces."
+        return True, "¡Horario registrado exitosamente sin cruces!"
