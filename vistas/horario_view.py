@@ -74,7 +74,7 @@ class HorarioView(ctk.CTkFrame):
         # Hora Inicio
         ctk.CTkLabel(self.col_left, text="⏰ Hora de Inicio:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
         self.combo_h_inicio = ctk.CTkComboBox(
-            self.col_left,
+            self.col_left, 
             values=["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"],
             height=34
         )
