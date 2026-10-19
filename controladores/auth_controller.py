@@ -91,3 +91,55 @@ class AuthController:
 
         except Exception as e:
             return False, f"Error de conexión: {str(e)}", None
+
+    def registrar_usuario(self_or_cls, identificacion: str, nombre: str, apellido: str, email: str, username: str, contrasena: str, rol: str = "Docente") -> tuple[bool, str]:
+        """
+        Registra un nuevo usuario en la base de datos Supabase con contraseña cifrada (SHA-256).
+        Soporta uso por instancia inyectada o llamada directa de clase.
+        """
+        if isinstance(self_or_cls, type):
+            return self_or_cls._get_instancia_defecto().registrar_usuario(
+                identificacion, nombre, apellido, email, username, contrasena, rol
+            )
+
+        self = self_or_cls
+
+        if not all([identificacion, nombre, apellido, email, username, contrasena]):
+            return False, "Por favor, completa todos los campos del formulario."
+
+        identificacion_limpia = identificacion.strip()
+        nombre_limpio = nombre.strip()
+        apellido_limpio = apellido.strip()
+        email_limpio = email.strip()
+        username_limpio = username.strip()
+        contrasena_limpia = contrasena.strip()
+
+        if len(contrasena_limpia) < 4:
+            return False, "La contraseña debe tener al menos 4 caracteres."
+
+        try:
+            client = self.db
+
+            # Verificar si ya existe el usuario por cédula, username o email
+            existente = client.table("usuarios").select("id").or_(
+                f"identificacion.eq.{identificacion_limpia},username.eq.{username_limpio},email.eq.{email_limpio}"
+            ).execute()
+
+            if existente.data and len(existente.data) > 0:
+                return False, "Ya existe una cuenta con esa identificación, usuario o correo."
+
+            nuevo_usuario = Usuario(
+                identificacion=identificacion_limpia,
+                nombre=nombre_limpio,
+                apellido=apellido_limpio,
+                email=email_limpio,
+                rol=rol,
+                username=username_limpio,
+                activo=True
+            )
+            nuevo_usuario.guardar(contrasena_limpia)
+            return True, "¡Cuenta creada con éxito! Ya puedes iniciar sesión."
+
+        except Exception as e:
+            return False, f"Error al registrar: {str(e)}"
+
