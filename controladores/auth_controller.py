@@ -2,24 +2,50 @@ from conexion.supabase_client import SupabaseConnection
 from modelos.usuario import Usuario
 
 class AuthController:
-    _usuario_actual: Usuario = None
+    _instancia_defecto = None
+    _usuario_actual: Usuario | None = None
+
+    def __init__(self, db_client=None):
+        """
+        Inyección de Dependencias: Permite recibir un cliente de base de datos (Supabase o Mock).
+        Si no se provee, utiliza SupabaseConnection.get_client() por defecto.
+        """
+        self.db = db_client or SupabaseConnection.get_client()
+        self.usuario_actual: Usuario | None = None
 
     @classmethod
-    def get_usuario_actual(cls) -> Usuario | None:
+    def _get_instancia_defecto(cls):
+        if cls._instancia_defecto is None:
+            cls._instancia_defecto = cls()
+        return cls._instancia_defecto
+
+    def get_usuario_actual(self_or_cls) -> Usuario | None:
         """Retorna el usuario actualmente autenticado en la sesión."""
-        return cls._usuario_actual
+        if isinstance(self_or_cls, type):
+            return self_or_cls._usuario_actual
+        return self_or_cls.usuario_actual or AuthController._usuario_actual
 
-    @classmethod
-    def cerrar_sesion(cls):
+    def cerrar_sesion(self_or_cls):
         """Limpia la sesión activa."""
-        cls._usuario_actual = None
+        if isinstance(self_or_cls, type):
+            if self_or_cls._instancia_defecto:
+                self_or_cls._instancia_defecto.usuario_actual = None
+            self_or_cls._usuario_actual = None
+            return
+        self_or_cls.usuario_actual = None
+        AuthController._usuario_actual = None
 
-    @classmethod
-    def iniciar_sesion(cls, usuario_o_email: str, contrasena: str) -> tuple[bool, str, Usuario | None]:
+    def iniciar_sesion(self_or_cls, usuario_o_email: str = None, contrasena: str = None) -> tuple[bool, str, Usuario | None]:
         """
         Valida las credenciales ingresadas contra la base de datos Supabase.
         Permite iniciar sesión tanto con el nombre de usuario (username) como con el correo institucional (email).
+        Soporta uso mediante instancia inyectada o llamada directa.
         """
+        if isinstance(self_or_cls, type):
+            return self_or_cls._get_instancia_defecto().iniciar_sesion(usuario_o_email, contrasena)
+
+        self = self_or_cls
+
         if not usuario_o_email or not contrasena:
             return False, "Por favor, completa todos los campos.", None
 
@@ -28,7 +54,7 @@ class AuthController:
         contrasena_hash = Usuario.hash_password(contrasena_limpia)
 
         try:
-            client = SupabaseConnection.get_client()
+            client = self.db
 
             # Consultar si coincide por username o por email
             query = client.table("usuarios").select("*").or_(f"username.eq.{usuario_limpio},email.eq.{usuario_limpio}").execute()
@@ -59,7 +85,8 @@ class AuthController:
                 activo=user_record.get("activo", True)
             )
 
-            cls._usuario_actual = usuario_logueado
+            self.usuario_actual = usuario_logueado
+            AuthController._usuario_actual = usuario_logueado
             return True, f"¡Bienvenido, {usuario_logueado.get_nombre_completo()}!", usuario_logueado
 
         except Exception as e:

@@ -2,8 +2,9 @@ import customtkinter as ctk
 from controladores.horario_controller import HorarioController
 
 class HorarioView(ctk.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, horario_controller=None):
         super().__init__(master, fg_color="transparent")
+        self.horario_controller = horario_controller or HorarioController()
         
         # Mapeos internos de etiquetas legibles a IDs
         self.docentes_map = {}
@@ -211,7 +212,7 @@ class HorarioView(ctk.CTkFrame):
         self.lbl_mensaje.configure(text="Sincronizando listas con Supabase...", text_color="#38bdf8")
 
         # 1. Cargar Docentes
-        docentes = HorarioController.obtener_docentes()
+        docentes = self.horario_controller.obtener_docentes()
         self.docentes_map.clear()
         docentes_vals = []
         for d in docentes:
@@ -227,7 +228,7 @@ class HorarioView(ctk.CTkFrame):
             self.docentes_map["1 - Docente Predeterminado"] = 1
 
         # 2. Cargar Aulas
-        aulas = HorarioController.obtener_aulas()
+        aulas = self.horario_controller.obtener_aulas()
         self.aulas_map.clear()
         aulas_vals = []
         for a in aulas:
@@ -244,7 +245,7 @@ class HorarioView(ctk.CTkFrame):
             self.aulas_map["1 - Aula General"] = {"id": 1, "capacidad": 40}
 
         # 3. Cargar Materias
-        materias = HorarioController.obtener_materias()
+        materias = self.horario_controller.obtener_materias()
         self.materias_map.clear()
         materias_vals = []
         for m in materias:
@@ -256,7 +257,7 @@ class HorarioView(ctk.CTkFrame):
             self.combo_materia.set(materias_vals[0])
 
         # 4. Cargar Cursos
-        cursos = HorarioController.obtener_cursos()
+        cursos = self.horario_controller.obtener_cursos()
         self.cursos_map.clear()
         cursos_vals = []
         for c in cursos:
@@ -274,7 +275,7 @@ class HorarioView(ctk.CTkFrame):
     def refrescar_historial_horarios(self):
         """Muestra los horarios ya registrados en la base de datos"""
         self.textbox_horarios.delete("0.0", "end")
-        horarios = HorarioController.obtener_horarios_registrados()
+        horarios = self.horario_controller.obtener_horarios_registrados()
         if not horarios:
             self.textbox_horarios.insert("end", "No hay horarios registrados en el sistema.")
             return
@@ -354,7 +355,7 @@ class HorarioView(ctk.CTkFrame):
 
         try:
             # Validación y creación en la base de datos a través del controlador
-            exito, mensaje = HorarioController.validar_y_crear_horario(
+            exito, mensaje = self.horario_controller.validar_y_crear_horario(
                 dia=dia,
                 hora_inicio=h_inicio,
                 hora_fin=h_fin,

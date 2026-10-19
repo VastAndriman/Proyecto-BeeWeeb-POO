@@ -8,18 +8,26 @@ from vistas.reportes_view import ReportesView
 from vistas.docente_view import DocenteView
 from vistas.login_view import LoginView
 from controladores.auth_controller import AuthController
-from conexion.supabase_client import supabase
+from controladores.horario_controller import HorarioController
+from conexion.supabase_client import SupabaseConnection, supabase
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
 class BeeWeekApp(ctk.CTk):
-    def __init__(self):
+    def __init__(self, db_client=None):
         super().__init__()
         self.title("BeeWeek - Sistema de Gestión y Validación Educativa")
         self.geometry("1180x730")
         self.minsize(980, 620)
         
+        # ========================================================
+        # COMPOSITION ROOT: Inyección de Dependencias
+        # ========================================================
+        self.db_client = db_client or SupabaseConnection.get_client()
+        self.auth_controller = AuthController(self.db_client)
+        self.horario_controller = HorarioController(self.db_client)
+
         self.sidebar_frame = None
         self.content_area = None
         self.vistas = {}
@@ -40,8 +48,12 @@ class BeeWeekApp(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=0)
 
-        # Crear y mostrar LoginView
-        self.login_view = LoginView(self, on_login_success=self.iniciar_aplicacion_principal)
+        # Crear y mostrar LoginView con AuthController inyectado
+        self.login_view = LoginView(
+            self, 
+            on_login_success=self.iniciar_aplicacion_principal,
+            auth_controller=self.auth_controller
+        )
         self.login_view.grid(row=0, column=0, sticky="nsew")
 
     def iniciar_aplicacion_principal(self, usuario):
@@ -148,7 +160,7 @@ class BeeWeekApp(ctk.CTk):
         self._construir_dashboard(self.vistas["dashboard"])
         
         self.vistas["calendario"] = CalendarioView(self.content_area)
-        self.vistas["horarios"] = HorarioView(self.content_area)
+        self.vistas["horarios"] = HorarioView(self.content_area, horario_controller=self.horario_controller)
         self.vistas["aulas"] = AulasView(self.content_area)
         self.vistas["docentes"] = DocenteView(self.content_area)
         self.vistas["reportes"] = ReportesView(self.content_area)
@@ -194,11 +206,11 @@ class BeeWeekApp(ctk.CTk):
 
     def actualizar_metricas(self):
         try:
-            res_aulas = supabase.table("aulas").select("*", count="exact").execute()
+            res_aulas = self.db_client.table("aulas").select("*", count="exact").execute()
             total_aulas = res_aulas.count if res_aulas.count is not None else len(res_aulas.data)
             self.card_aulas_val.configure(text=str(total_aulas))
             
-            res_horarios = supabase.table("horarios").select("*", count="exact").execute()
+            res_horarios = self.db_client.table("horarios").select("*", count="exact").execute()
             total_horarios = res_horarios.count if res_horarios.count is not None else len(res_horarios.data)
             self.card_horarios_val.configure(text=str(total_horarios))
         except Exception:
@@ -219,7 +231,7 @@ class BeeWeekApp(ctk.CTk):
 
     def cerrar_sesion(self):
         """Cierra la sesión actual y regresa a la pantalla de login."""
-        AuthController.cerrar_sesion()
+        self.auth_controller.cerrar_sesion()
         self.mostrar_login()
 
 if __name__ == "__main__":

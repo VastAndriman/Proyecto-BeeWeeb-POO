@@ -3,9 +3,10 @@ import customtkinter as ctk
 from controladores.auth_controller import AuthController
 
 class LoginView(ctk.CTkFrame):
-    def __init__(self, master, on_login_success):
+    def __init__(self, master, on_login_success, auth_controller=None):
         super().__init__(master, fg_color=("#f3ebf2", "#130914"))
         self.on_login_success = on_login_success
+        self.auth_controller = auth_controller or AuthController()
 
         # Centrar la tarjeta principal
         self.grid_rowconfigure(0, weight=1)
@@ -311,7 +312,7 @@ class LoginView(ctk.CTkFrame):
         self.lbl_mensaje.configure(text="")
         self.update_idletasks()
 
-        exito, mensaje, usuario_obj = AuthController.iniciar_sesion(usuario, contrasena)
+        exito, mensaje, usuario_obj = self.auth_controller.iniciar_sesion(usuario, contrasena)
 
         if exito:
             self.lbl_mensaje.configure(text=f"✅ {mensaje}", text_color="#16a34a")

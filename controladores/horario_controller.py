@@ -1,6 +1,21 @@
 from conexion.supabase_client import SupabaseConnection
 
 class HorarioController:
+    _instancia_defecto = None
+
+    def __init__(self, db_client=None):
+        """
+        Inyección de Dependencias: Permite inyectar cualquier cliente de base de datos
+        (por ejemplo, mock para pruebas o cliente real de Supabase).
+        """
+        self.db = db_client or SupabaseConnection.get_client()
+
+    @classmethod
+    def _get_instancia_defecto(cls):
+        if cls._instancia_defecto is None:
+            cls._instancia_defecto = cls()
+        return cls._instancia_defecto
+
     @staticmethod
     def normalizar_hora(h_str):
         if not h_str:
@@ -10,29 +25,32 @@ class HorarioController:
             return f"{parts[0].zfill(2)}:{parts[1].zfill(2)}"
         return str(h_str).strip()
 
-    @staticmethod
-    def obtener_aulas():
+    def obtener_aulas(self_or_cls):
+        if isinstance(self_or_cls, type):
+            return self_or_cls._get_instancia_defecto().obtener_aulas()
+        self = self_or_cls
         try:
-            client = SupabaseConnection.get_client()
-            res = client.table("aulas").select("*").execute()
+            res = self.db.table("aulas").select("*").execute()
             return res.data if res.data else []
         except Exception:
             return []
 
-    @staticmethod
-    def obtener_docentes():
+    def obtener_docentes(self_or_cls):
+        if isinstance(self_or_cls, type):
+            return self_or_cls._get_instancia_defecto().obtener_docentes()
+        self = self_or_cls
         try:
-            client = SupabaseConnection.get_client()
-            res = client.table("docentes").select("*").execute()
+            res = self.db.table("docentes").select("*").execute()
             return res.data if res.data else []
         except Exception:
             return []
 
-    @staticmethod
-    def obtener_materias():
+    def obtener_materias(self_or_cls):
+        if isinstance(self_or_cls, type):
+            return self_or_cls._get_instancia_defecto().obtener_materias()
+        self = self_or_cls
         try:
-            client = SupabaseConnection.get_client()
-            res = client.table("materias").select("*").execute()
+            res = self.db.table("materias").select("*").execute()
             if res.data:
                 return res.data
         except Exception:
@@ -47,11 +65,12 @@ class HorarioController:
             {"id": 6, "nombre": "Sistemas Operativos"}
         ]
 
-    @staticmethod
-    def obtener_cursos():
+    def obtener_cursos(self_or_cls):
+        if isinstance(self_or_cls, type):
+            return self_or_cls._get_instancia_defecto().obtener_cursos()
+        self = self_or_cls
         try:
-            client = SupabaseConnection.get_client()
-            res = client.table("cursos").select("*").execute()
+            res = self.db.table("cursos").select("*").execute()
             if res.data:
                 return res.data
         except Exception:
@@ -65,18 +84,23 @@ class HorarioController:
             {"id": 301, "nombre": "Curso 301 - Paralelo A"}
         ]
 
-    @staticmethod
-    def obtener_horarios_registrados():
+    def obtener_horarios_registrados(self_or_cls):
+        if isinstance(self_or_cls, type):
+            return self_or_cls._get_instancia_defecto().obtener_horarios_registrados()
+        self = self_or_cls
         try:
-            client = SupabaseConnection.get_client()
-            res = client.table("horarios").select("*").execute()
+            res = self.db.table("horarios").select("*").execute()
             return res.data if res.data else []
         except Exception:
             return []
 
-    @staticmethod
-    def validar_y_crear_horario(dia, hora_inicio, hora_fin, materia_id, docente_id, aula_id, curso_id, num_estudiantes):
-        client = SupabaseConnection.get_client()
+    def validar_y_crear_horario(self_or_cls, dia, hora_inicio, hora_fin, materia_id, docente_id, aula_id, curso_id, num_estudiantes):
+        if isinstance(self_or_cls, type):
+            return self_or_cls._get_instancia_defecto().validar_y_crear_horario(
+                dia, hora_inicio, hora_fin, materia_id, docente_id, aula_id, curso_id, num_estudiantes
+            )
+        self = self_or_cls
+        client = self.db
         
         # 1. Validación de Aforo: Capacidad(idAula) >= NumEstudiantes(idCurso)
         aula_res = client.table("aulas").select("capacidad").eq("id", aula_id).execute()
