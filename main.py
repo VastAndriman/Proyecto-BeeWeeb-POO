@@ -166,11 +166,11 @@ class BeeWeekApp(ctk.CTk):
         self.vistas["dashboard"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
         self._construir_dashboard(self.vistas["dashboard"])
         
-        self.vistas["calendario"] = CalendarioView(self.content_area)
+        self.vistas["calendario"] = CalendarioView(self.content_area, horario_controller=self.horario_controller)
         self.vistas["horarios"] = HorarioView(self.content_area, horario_controller=self.horario_controller)
         self.vistas["aulas"] = AulasView(self.content_area)
         self.vistas["docentes"] = DocenteView(self.content_area)
-        self.vistas["reportes"] = ReportesView(self.content_area)
+        self.vistas["reportes"] = ReportesView(self.content_area, horario_controller=self.horario_controller)
 
     def _construir_dashboard(self, parent):
         self.lbl_bienvenida = ctk.CTkLabel(parent, text="Bienvenido, Usuario", font=("Arial", 22, "bold"))
@@ -235,6 +235,8 @@ class BeeWeekApp(ctk.CTk):
             vista_activa.cargar_horarios()
         elif hasattr(vista_activa, "cargar_aulas"):
             vista_activa.cargar_aulas()
+        elif hasattr(vista_activa, "cargar_docentes"):
+            vista_activa.cargar_docentes()
 
     def cerrar_sesion(self):
         """Cierra la sesión actual y regresa a la pantalla de login."""

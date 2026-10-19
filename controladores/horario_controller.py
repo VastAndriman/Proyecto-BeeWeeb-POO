@@ -25,32 +25,26 @@ class HorarioController:
             return f"{parts[0].zfill(2)}:{parts[1].zfill(2)}"
         return str(h_str).strip()
 
-    def obtener_aulas(self_or_cls):
-        if isinstance(self_or_cls, type):
-            return self_or_cls._get_instancia_defecto().obtener_aulas()
-        self = self_or_cls
+    def obtener_aulas(self_or_cls=None):
+        inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
-            res = self.db.table("aulas").select("*").execute()
+            res = inst.db.table("aulas").select("*").execute()
             return res.data if res.data else []
         except Exception:
             return []
 
-    def obtener_docentes(self_or_cls):
-        if isinstance(self_or_cls, type):
-            return self_or_cls._get_instancia_defecto().obtener_docentes()
-        self = self_or_cls
+    def obtener_docentes(self_or_cls=None):
+        inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
-            res = self.db.table("docentes").select("*").execute()
+            res = inst.db.table("docentes").select("*").execute()
             return res.data if res.data else []
         except Exception:
             return []
 
-    def obtener_materias(self_or_cls):
-        if isinstance(self_or_cls, type):
-            return self_or_cls._get_instancia_defecto().obtener_materias()
-        self = self_or_cls
+    def obtener_materias(self_or_cls=None):
+        inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
-            res = self.db.table("materias").select("*").execute()
+            res = inst.db.table("materias").select("*").execute()
             if res.data:
                 return res.data
         except Exception:
@@ -65,12 +59,10 @@ class HorarioController:
             {"id": 6, "nombre": "Sistemas Operativos"}
         ]
 
-    def obtener_cursos(self_or_cls):
-        if isinstance(self_or_cls, type):
-            return self_or_cls._get_instancia_defecto().obtener_cursos()
-        self = self_or_cls
+    def obtener_cursos(self_or_cls=None):
+        inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
-            res = self.db.table("cursos").select("*").execute()
+            res = inst.db.table("cursos").select("*").execute()
             if res.data:
                 return res.data
         except Exception:
@@ -84,23 +76,32 @@ class HorarioController:
             {"id": 301, "nombre": "Curso 301 - Paralelo A"}
         ]
 
-    def obtener_horarios_registrados(self_or_cls):
-        if isinstance(self_or_cls, type):
-            return self_or_cls._get_instancia_defecto().obtener_horarios_registrados()
-        self = self_or_cls
+    def obtener_horarios_registrados(self_or_cls=None):
+        inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
-            res = self.db.table("horarios").select("*").execute()
+            res = inst.db.table("horarios").select("*").execute()
             return res.data if res.data else []
         except Exception:
             return []
 
-    def validar_y_crear_horario(self_or_cls, dia, hora_inicio, hora_fin, materia_id, docente_id, aula_id, curso_id, num_estudiantes):
-        if isinstance(self_or_cls, type):
-            return self_or_cls._get_instancia_defecto().validar_y_crear_horario(
-                dia, hora_inicio, hora_fin, materia_id, docente_id, aula_id, curso_id, num_estudiantes
-            )
-        self = self_or_cls
-        client = self.db
+    def validar_y_crear_horario(self_or_dia=None, dia=None, hora_inicio=None, hora_fin=None, materia_id=None, docente_id=None, aula_id=None, curso_id=None, num_estudiantes=None, *args, **kwargs):
+        if isinstance(self_or_dia, HorarioController):
+            inst = self_or_dia
+        else:
+            inst = HorarioController._get_instancia_defecto()
+            if self_or_dia is not None and not isinstance(self_or_dia, type):
+                dia = self_or_dia
+
+        dia = dia or kwargs.get("dia")
+        hora_inicio = hora_inicio or kwargs.get("hora_inicio")
+        hora_fin = hora_fin or kwargs.get("hora_fin")
+        materia_id = materia_id if materia_id is not None else kwargs.get("materia_id")
+        docente_id = docente_id if docente_id is not None else kwargs.get("docente_id")
+        aula_id = aula_id if aula_id is not None else kwargs.get("aula_id")
+        curso_id = curso_id if curso_id is not None else kwargs.get("curso_id")
+        num_estudiantes = num_estudiantes if num_estudiantes is not None else kwargs.get("num_estudiantes")
+
+        client = inst.db
         
         # 1. Validación de Aforo: Capacidad(idAula) >= NumEstudiantes(idCurso)
         aula_res = client.table("aulas").select("capacidad").eq("id", aula_id).execute()

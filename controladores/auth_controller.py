@@ -19,38 +19,40 @@ class AuthController:
             cls._instancia_defecto = cls()
         return cls._instancia_defecto
 
-    def get_usuario_actual(self_or_cls) -> Usuario | None:
+    def get_usuario_actual(self_or_cls=None) -> Usuario | None:
         """Retorna el usuario actualmente autenticado en la sesión."""
-        if isinstance(self_or_cls, type):
-            return self_or_cls._usuario_actual
-        return self_or_cls.usuario_actual or AuthController._usuario_actual
+        inst = self_or_cls if isinstance(self_or_cls, AuthController) else AuthController._get_instancia_defecto()
+        return inst.usuario_actual or AuthController._usuario_actual
 
-    def cerrar_sesion(self_or_cls):
+    def cerrar_sesion(self_or_cls=None):
         """Limpia la sesión activa."""
-        if isinstance(self_or_cls, type):
-            if self_or_cls._instancia_defecto:
-                self_or_cls._instancia_defecto.usuario_actual = None
-            self_or_cls._usuario_actual = None
-            return
-        self_or_cls.usuario_actual = None
+        inst = self_or_cls if isinstance(self_or_cls, AuthController) else AuthController._get_instancia_defecto()
+        inst.usuario_actual = None
         AuthController._usuario_actual = None
 
-    def iniciar_sesion(self_or_cls, usuario_o_email: str = None, contrasena: str = None) -> tuple[bool, str, Usuario | None]:
+    def iniciar_sesion(self_or_user=None, usuario_o_email: str = None, contrasena: str = None, *args, **kwargs) -> tuple[bool, str, Usuario | None]:
         """
         Valida las credenciales ingresadas contra la base de datos Supabase.
         Permite iniciar sesión tanto con el nombre de usuario (username) como con el correo institucional (email).
         Soporta uso mediante instancia inyectada o llamada directa.
         """
-        if isinstance(self_or_cls, type):
-            return self_or_cls._get_instancia_defecto().iniciar_sesion(usuario_o_email, contrasena)
+        if isinstance(self_or_user, AuthController):
+            inst = self_or_user
+        else:
+            inst = AuthController._get_instancia_defecto()
+            if self_or_user is not None and not isinstance(self_or_user, type):
+                usuario_o_email = self_or_user
 
-        self = self_or_cls
+        usuario_o_email = usuario_o_email or kwargs.get("usuario_o_email") or (args[0] if len(args) > 0 else None)
+        contrasena = contrasena or kwargs.get("contrasena") or (args[1] if len(args) > 1 else None)
+
+        self = inst
 
         if not usuario_o_email or not contrasena:
             return False, "Por favor, completa todos los campos.", None
 
-        usuario_limpio = usuario_o_email.strip()
-        contrasena_limpia = contrasena.strip()
+        usuario_limpio = str(usuario_o_email).strip()
+        contrasena_limpia = str(contrasena).strip()
         contrasena_hash = Usuario.hash_password(contrasena_limpia)
 
         try:
@@ -92,17 +94,27 @@ class AuthController:
         except Exception as e:
             return False, f"Error de conexión: {str(e)}", None
 
-    def registrar_usuario(self_or_cls, identificacion: str, nombre: str, apellido: str, email: str, username: str, contrasena: str, rol: str = "Docente") -> tuple[bool, str]:
+    def registrar_usuario(self_or_id=None, identificacion: str = None, nombre: str = None, apellido: str = None, email: str = None, username: str = None, contrasena: str = None, rol: str = "Docente", *args, **kwargs) -> tuple[bool, str]:
         """
         Registra un nuevo usuario en la base de datos Supabase con contraseña cifrada (SHA-256).
         Soporta uso por instancia inyectada o llamada directa de clase.
         """
-        if isinstance(self_or_cls, type):
-            return self_or_cls._get_instancia_defecto().registrar_usuario(
-                identificacion, nombre, apellido, email, username, contrasena, rol
-            )
+        if isinstance(self_or_id, AuthController):
+            inst = self_or_id
+        else:
+            inst = AuthController._get_instancia_defecto()
+            if self_or_id is not None and not isinstance(self_or_id, type):
+                identificacion = self_or_id
 
-        self = self_or_cls
+        identificacion = identificacion or kwargs.get("identificacion")
+        nombre = nombre or kwargs.get("nombre")
+        apellido = apellido or kwargs.get("apellido")
+        email = email or kwargs.get("email")
+        username = username or kwargs.get("username")
+        contrasena = contrasena or kwargs.get("contrasena")
+        rol = rol or kwargs.get("rol", "Docente")
+
+        self = inst
 
         if not all([identificacion, nombre, apellido, email, username, contrasena]):
             return False, "Por favor, completa todos los campos del formulario."

@@ -3,8 +3,9 @@ from conexion.supabase_client import supabase
 from controladores.horario_controller import HorarioController
 
 class ReportesView(ctk.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, horario_controller=None):
         super().__init__(master, fg_color="transparent")
+        self.horario_controller = horario_controller or HorarioController()
         
         # Header / Título del módulo
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -53,13 +54,12 @@ class ReportesView(ctk.CTkFrame):
                 for row in data:
                     self.txt_reporte.insert("end", f"{row.get('id',''):<6} | {row.get('numero',''):<12} | {row.get('capacidad',''):<14} | {row.get('tipo',''):<20}\n")
             else:
-                materias_map = {str(m.get("id")): m.get("nombre", f"ID: {m.get('id')}") for m in HorarioController.obtener_materias()}
-                aulas_map = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in HorarioController.obtener_aulas()}
-                docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in HorarioController.obtener_docentes()}
-                cursos_map = {str(c.get("id")): c.get("nombre", f"ID: {c.get('id')}") for c in HorarioController.obtener_cursos()}
+                materias_map = {str(m.get("id")): m.get("nombre", f"ID: {m.get('id')}") for m in self.horario_controller.obtener_materias()}
+                aulas_map = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in self.horario_controller.obtener_aulas()}
+                docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes()}
+                cursos_map = {str(c.get("id")): c.get("nombre", f"ID: {c.get('id')}") for c in self.horario_controller.obtener_cursos()}
 
-                res = supabase.table("horarios").select("*").execute()
-                data = res.data if res.data else []
+                data = self.horario_controller.obtener_horarios_registrados()
                 
                 self.txt_reporte.insert("end", f"{'DÍA':<10} | {'HORA':<13} | {'AULA':<12} | {'DOCENTE':<22} | {'MATERIA':<28} | {'CURSO':<15}\n")
                 self.txt_reporte.insert("end", "-" * 105 + "\n")

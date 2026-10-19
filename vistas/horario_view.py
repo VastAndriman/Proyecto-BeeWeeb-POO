@@ -281,10 +281,10 @@ class HorarioView(ctk.CTkFrame):
             return
 
         # Mapeos rápidos para mostrar nombres en lugar de sólo IDs
-        materias_lookup = {str(m.get("id")): m.get("nombre", "") for m in HorarioController.obtener_materias()}
-        cursos_lookup = {str(c.get("id")): c.get("nombre", "") for c in HorarioController.obtener_cursos()}
-        aulas_lookup = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in HorarioController.obtener_aulas()}
-        docentes_lookup = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in HorarioController.obtener_docentes()}
+        materias_lookup = {str(m.get("id")): m.get("nombre", "") for m in self.horario_controller.obtener_materias()}
+        cursos_lookup = {str(c.get("id")): c.get("nombre", "") for c in self.horario_controller.obtener_cursos()}
+        aulas_lookup = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in self.horario_controller.obtener_aulas()}
+        docentes_lookup = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes()}
 
         encabezado = f"{'DÍA':<10} | {'HORA':<13} | {'AULA':<12} | {'DOCENTE':<20} | {'MATERIA':<28} | {'CURSO':<18}\n"
         encabezado += "=" * 108 + "\n"
