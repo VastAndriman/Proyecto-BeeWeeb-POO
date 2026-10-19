@@ -223,5 +223,8 @@ class BeeWeekApp(ctk.CTk):
         self.mostrar_login()
 
 if __name__ == "__main__":
-    app = BeeWeekApp()
-    app.mainloop()
+    try:
+        app = BeeWeekApp()
+        app.mainloop()
+    except KeyboardInterrupt:
+        pass
