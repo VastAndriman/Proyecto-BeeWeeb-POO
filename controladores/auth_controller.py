@@ -1,0 +1,66 @@
+from conexion.supabase_client import SupabaseConnection
+from modelos.usuario import Usuario
+
+class AuthController:
+    _usuario_actual: Usuario = None
+
+    @classmethod
+    def get_usuario_actual(cls) -> Usuario | None:
+        """Retorna el usuario actualmente autenticado en la sesión."""
+        return cls._usuario_actual
+
+    @classmethod
+    def cerrar_sesion(cls):
+        """Limpia la sesión activa."""
+        cls._usuario_actual = None
+
+    @classmethod
+    def iniciar_sesion(cls, usuario_o_email: str, contrasena: str) -> tuple[bool, str, Usuario | None]:
+        """
+        Valida las credenciales ingresadas contra la base de datos Supabase.
+        Permite iniciar sesión tanto con el nombre de usuario (username) como con el correo institucional (email).
+        """
+        if not usuario_o_email or not contrasena:
+            return False, "Por favor, completa todos los campos.", None
+
+        usuario_limpio = usuario_o_email.strip()
+        contrasena_limpia = contrasena.strip()
+        contrasena_hash = Usuario.hash_password(contrasena_limpia)
+
+        try:
+            client = SupabaseConnection.get_client()
+
+            # Consultar si coincide por username o por email
+            query = client.table("usuarios").select("*").or_(f"username.eq.{usuario_limpio},email.eq.{usuario_limpio}").execute()
+
+            if not query.data or len(query.data) == 0:
+                return False, "Credenciales incorrectas: usuario no encontrado.", None
+
+            user_record = query.data[0]
+
+            # Validar si el usuario está activo
+            if not user_record.get("activo", True):
+                return False, "Esta cuenta ha sido desactivada. Consulta con administración.", None
+
+            # Validar contraseña (compara con hash SHA-256 o texto plano de respaldo)
+            hash_almacenado = user_record.get("password_hash", "")
+            if hash_almacenado != contrasena_hash and hash_almacenado != contrasena_limpia:
+                return False, "Contraseña incorrecta. Inténtalo nuevamente.", None
+
+            # Instanciar el objeto Usuario (POO)
+            usuario_logueado = Usuario(
+                identificacion=user_record.get("identificacion", ""),
+                nombre=user_record.get("nombre", ""),
+                apellido=user_record.get("apellido", ""),
+                email=user_record.get("email", ""),
+                rol=user_record.get("rol", "Docente"),
+                username=user_record.get("username", usuario_limpio),
+                id_usuario=user_record.get("id"),
+                activo=user_record.get("activo", True)
+            )
+
+            cls._usuario_actual = usuario_logueado
+            return True, f"¡Bienvenido, {usuario_logueado.get_nombre_completo()}!", usuario_logueado
+
+        except Exception as e:
+            return False, f"Error de conexión: {str(e)}", None
