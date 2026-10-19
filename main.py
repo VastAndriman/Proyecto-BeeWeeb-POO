@@ -157,7 +157,7 @@ class BeeWeekApp(ctk.CTk):
         # ==========================================
         # 2. CONTENEDOR PRINCIPAL
         
-        self.content_area = ctk.CTkFrame(self, fg_color=("#f1f5f9", "#111827"))
+        self.content_area = ctk.CTkFrame(self, fg_color=("#f1f5f9", "   #111827"))
         self.content_area.grid(row=0, column=1, sticky="nsew", padx=0, pady=0)
         self.content_area.grid_rowconfigure(0, weight=1)
         self.content_area.grid_columnconfigure(0, weight=1)
