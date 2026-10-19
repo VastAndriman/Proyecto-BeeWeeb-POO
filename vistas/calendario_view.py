@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from conexion.supabase_client import supabase
+from controladores.horario_controller import HorarioController
 
 class CalendarioView(ctk.CTkFrame):
     def __init__(self, master):
@@ -49,19 +50,29 @@ class CalendarioView(ctk.CTkFrame):
             lbl_hora.grid(row=row_idx, column=0, padx=5, pady=5, sticky="nsew")
             
             for col_idx in range(1, 6):
-                cell_frame = ctk.CTkFrame(self.grid_container, corner_radius=6, border_width=1, border_color="#334155", fg_color="transparent", height=60)
+                cell_frame = ctk.CTkFrame(self.grid_container, corner_radius=6, border_width=1, border_color="#334155", fg_color="transparent", height=65)
                 cell_frame.grid(row=row_idx, column=col_idx, padx=4, pady=4, sticky="nsew")
 
         # Consultar la base de datos para mapear las clases guardadas
         try:
+            materias_map = {str(m.get("id")): m.get("nombre", f"Materia {m.get('id')}") for m in HorarioController.obtener_materias()}
+            aulas_map = {str(a.get("id")): str(a.get("numero", a.get("id"))) for a in HorarioController.obtener_aulas()}
+            docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in HorarioController.obtener_docentes()}
+
             res = supabase.table("horarios").select("*").execute()
             horarios = res.data if res.data else []
             
             for h in horarios:
                 dia_str = str(h.get("dia") or h.get("dia_semana") or "").strip().capitalize()
                 hora_str = str(h.get("hora_inicio", "")).strip()[:5]
-                materia = h.get("materia") or f"Materia {h.get('materia_id', '')}"
-                aula = h.get("aula_id", "Aula")
+                
+                materia_id = str(h.get("materia_id", ""))
+                aula_id = str(h.get("aula_id", ""))
+                docente_id = str(h.get("docente_id", ""))
+
+                materia_nom = materias_map.get(materia_id, h.get("materia") or f"Materia {materia_id}")
+                aula_nom = aulas_map.get(aula_id, aula_id)
+                docente_nom = docentes_map.get(docente_id, "")
                 
                 if dia_str in self.dias:
                     col_idx = self.dias.index(dia_str) + 1
@@ -76,7 +87,10 @@ class CalendarioView(ctk.CTkFrame):
                     card_materia = ctk.CTkFrame(self.grid_container, fg_color="#1e3a8a", corner_radius=6)
                     card_materia.grid(row=row_idx, column=col_idx, padx=4, pady=4, sticky="nsew")
                     
-                    lbl_m = ctk.CTkLabel(card_materia, text=f"{materia}\n📍 Aula: {aula}", font=("Arial", 10, "bold"), text_color="#60a5fa")
+                    texto_tarjeta = f"📘 {materia_nom}\n📍 Aula: {aula_nom}"
+                    if docente_nom:
+                        texto_tarjeta += f"\n👨‍🏫 {docente_nom}"
+                    lbl_m = ctk.CTkLabel(card_materia, text=texto_tarjeta, font=("Arial", 10, "bold"), text_color="#93c5fd", justify="center")
                     lbl_m.pack(expand=True, fill="both", padx=5, pady=5)
         except Exception:
             pass

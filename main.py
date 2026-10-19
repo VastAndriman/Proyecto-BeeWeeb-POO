@@ -18,9 +18,9 @@ class BeeWeekApp(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         
-        # ==========================================
+        
         # 1. BARRA LATERAL (SIDEBAR CORPORATIVO)
-        # ==========================================
+        
         self.sidebar_frame = ctk.CTkFrame(self, width=250, corner_radius=0, fg_color=("#1e293b", "#0f172a"))
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(8, weight=1)
@@ -55,9 +55,9 @@ class BeeWeekApp(ctk.CTk):
         self.lbl_user = ctk.CTkLabel(self.sidebar_frame, text="👤 Rol: Administrador\n🌐 uleam.edu.ec", font=("Arial", 11), text_color="#64748b", anchor="w")
         self.lbl_user.grid(row=9, column=0, padx=20, pady=20, sticky="sw")
 
-        # ==========================================
+        
         # 2. CONTENEDOR PRINCIPAL
-        # ==========================================
+        
         self.content_area = ctk.CTkFrame(self, fg_color=("#f1f5f9", "#111827"))
         self.content_area.grid(row=0, column=1, sticky="nsew", padx=0, pady=0)
         self.content_area.grid_rowconfigure(0, weight=1)

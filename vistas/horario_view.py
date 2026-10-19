@@ -272,26 +272,40 @@ class HorarioView(ctk.CTkFrame):
         self.lbl_mensaje.configure(text="✅ Datos sincronizados correctamente.", text_color="#34d399")
 
     def refrescar_historial_horarios(self):
-        """Muestra los horarios ya registrados en la base de datos"""
+        """Muestra los horarios ya registrados en la base de datos con nombres legibles"""
         self.textbox_horarios.delete("0.0", "end")
         horarios = HorarioController.obtener_horarios_registrados()
         if not horarios:
-            self.textbox_horarios.insert("end", "No hay horarios registrados en el sistema.")
+            self.textbox_horarios.insert("end", "No hay horarios registrados en el sistema.\n")
             return
 
-        encabezado = f"{'DÍA':<10} | {'INICIO':<8} | {'FIN':<8} | {'AULA':<8} | {'DOCENTE':<9} | {'MATERIA':<9} | {'CURSO':<8}\n"
-        encabezado += "-" * 75 + "\n"
+        # Mapeos rápidos para mostrar nombres en lugar de sólo IDs
+        materias_lookup = {str(m.get("id")): m.get("nombre", "") for m in HorarioController.obtener_materias()}
+        cursos_lookup = {str(c.get("id")): c.get("nombre", "") for c in HorarioController.obtener_cursos()}
+        aulas_lookup = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in HorarioController.obtener_aulas()}
+        docentes_lookup = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in HorarioController.obtener_docentes()}
+
+        encabezado = f"{'DÍA':<10} | {'HORA':<13} | {'AULA':<12} | {'DOCENTE':<20} | {'MATERIA':<28} | {'CURSO':<18}\n"
+        encabezado += "=" * 108 + "\n"
         self.textbox_horarios.insert("end", encabezado)
 
         for h in horarios:
             dia = str(h.get('dia', ''))[:10]
-            h_ini = str(h.get('hora_inicio', ''))[:8]
-            h_fin = str(h.get('hora_fin', ''))[:8]
-            aula = str(h.get('aula_id', ''))
-            docente = str(h.get('docente_id', ''))
-            materia = str(h.get('materia_id', ''))
-            curso = str(h.get('curso_id', ''))
-            linea = f"{dia:<10} | {h_ini:<8} | {h_fin:<8} | {aula:<8} | {docente:<9} | {materia:<9} | {curso:<8}\n"
+            h_ini = str(h.get('hora_inicio', ''))[:5]
+            h_fin = str(h.get('hora_fin', ''))[:5]
+            hora_str = f"{h_ini}-{h_fin}"
+            
+            aula_id = str(h.get('aula_id', ''))
+            docente_id = str(h.get('docente_id', ''))
+            materia_id = str(h.get('materia_id', ''))
+            curso_id = str(h.get('curso_id', ''))
+
+            aula_nom = aulas_lookup.get(aula_id, f"ID: {aula_id}")[:12]
+            docente_nom = docentes_lookup.get(docente_id, f"ID: {docente_id}")[:20]
+            materia_nom = materias_lookup.get(materia_id, f"ID: {materia_id}")[:28]
+            curso_nom = cursos_lookup.get(curso_id, f"ID: {curso_id}")[:18]
+
+            linea = f"{dia:<10} | {hora_str:<13} | {aula_nom:<12} | {docente_nom:<20} | {materia_nom:<28} | {curso_nom:<18}\n"
             self.textbox_horarios.insert("end", linea)
 
     def _resolver_id(self, valor, mapa):

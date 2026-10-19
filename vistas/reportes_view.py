@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from conexion.supabase_client import supabase
+from controladores.horario_controller import HorarioController
 
 class ReportesView(ctk.CTkFrame):
     def __init__(self, master):
@@ -29,40 +30,50 @@ class ReportesView(ctk.CTkFrame):
         self.preview_frame = ctk.CTkFrame(self, corner_radius=10)
         self.preview_frame.pack(fill="both", expand=True, padx=30, pady=10)
 
-        self.txt_reporte = ctk.CTkTextbox(self.preview_frame, font=("Courier", 12))
+        self.txt_reporte = ctk.CTkTextbox(self.preview_frame, font=("Courier", 11))
         self.txt_reporte.pack(fill="both", expand=True, padx=15, pady=15)
 
     def generar_reporte(self):
         tipo = self.combo_tipo.get()
         self.txt_reporte.delete("0.0", "end")
         
-        encabezado = "===========================================================\n"
-        encabezado += "        UNIVERSIDAD LAICA ELOY ALFARO DE MANABÍ (ULEAM)\n"
-        encabezado += "              SISTEMA BEEWEEK - REPORTE OFICIAL\n"
+        encabezado = "=========================================================================================================\n"
+        encabezado += "                           UNIVERSIDAD LAICA ELOY ALFARO DE MANABÍ (ULEAM)\n"
+        encabezado += "                                 SISTEMA BEEWEEK - REPORTE OFICIAL\n"
         encabezado += f" Tipo de Reporte: {tipo}\n"
-        encabezado += "===========================================================\n\n"
+        encabezado += "=========================================================================================================\n\n"
         self.txt_reporte.insert("end", encabezado)
 
         try:
             if tipo == "Aulas y Aforo":
                 res = supabase.table("aulas").select("*").execute()
                 data = res.data if res.data else []
-                self.txt_reporte.insert("end", f"{'ID':<5} | {'NÚMERO':<10} | {'CAPACIDAD':<12} | {'TIPO':<15}\n")
-                self.txt_reporte.insert("end", "-" * 55 + "\n")
-                for row in data:
-                    self.txt_reporte.insert("end", f"{row.get('id',''):<5} | {row.get('numero',''):<10} | {row.get('capacidad',''):<12} | {row.get('tipo',''):<15}\n")
-            else:
-                res = supabase.table("horarios").select("*").execute()
-                data = res.data if res.data else []
-                self.txt_reporte.insert("end", f"{'DÍA':<12} | {'HORA INICIO':<15} | {'AULA':<8} | {'DOCENTE':<10}\n")
+                self.txt_reporte.insert("end", f"{'ID':<6} | {'NÚMERO':<12} | {'CAPACIDAD':<14} | {'TIPO':<20}\n")
                 self.txt_reporte.insert("end", "-" * 60 + "\n")
                 for row in data:
-                    # Usamos exactamente la columna 'dia' que vimos en tu Supabase
-                    dia_val = str(row.get('dia', 'N/A'))
-                    hora_val = str(row.get('hora_inicio', 'N/A'))
-                    aula_val = str(row.get('aula_id', 'N/A'))
-                    docente_val = str(row.get('docente_id', 'N/A'))
+                    self.txt_reporte.insert("end", f"{row.get('id',''):<6} | {row.get('numero',''):<12} | {row.get('capacidad',''):<14} | {row.get('tipo',''):<20}\n")
+            else:
+                materias_map = {str(m.get("id")): m.get("nombre", f"ID: {m.get('id')}") for m in HorarioController.obtener_materias()}
+                aulas_map = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in HorarioController.obtener_aulas()}
+                docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in HorarioController.obtener_docentes()}
+                cursos_map = {str(c.get("id")): c.get("nombre", f"ID: {c.get('id')}") for c in HorarioController.obtener_cursos()}
+
+                res = supabase.table("horarios").select("*").execute()
+                data = res.data if res.data else []
+                
+                self.txt_reporte.insert("end", f"{'DÍA':<10} | {'HORA':<13} | {'AULA':<12} | {'DOCENTE':<22} | {'MATERIA':<28} | {'CURSO':<15}\n")
+                self.txt_reporte.insert("end", "-" * 105 + "\n")
+                for row in data:
+                    dia_val = str(row.get('dia', 'N/A'))[:10]
+                    h_ini = str(row.get('hora_inicio', ''))[:5]
+                    h_fin = str(row.get('hora_fin', ''))[:5]
+                    hora_val = f"{h_ini}-{h_fin}" if h_fin else h_ini
+
+                    aula_val = aulas_map.get(str(row.get('aula_id')), f"ID: {row.get('aula_id')}")[:12]
+                    docente_val = docentes_map.get(str(row.get('docente_id')), f"ID: {row.get('docente_id')}")[:22]
+                    materia_val = materias_map.get(str(row.get('materia_id')), f"ID: {row.get('materia_id')}")[:28]
+                    curso_val = cursos_map.get(str(row.get('curso_id')), f"ID: {row.get('curso_id')}")[:15]
                     
-                    self.txt_reporte.insert("end", f"{dia_val:<12} | {hora_val:<15} | {aula_val:<8} | {docente_val:<10}\n")
+                    self.txt_reporte.insert("end", f"{dia_val:<10} | {hora_val:<13} | {aula_val:<12} | {docente_val:<22} | {materia_val:<28} | {curso_val:<15}\n")
         except Exception as e:
             self.txt_reporte.insert("end", f"Error al recuperar datos de la nube: {e}")
