@@ -3,11 +3,13 @@ import customtkinter as ctk
 from controladores.auth_controller import AuthController
 
 class LoginView(ctk.CTkFrame):
-    def __init__(self, master, on_login_success):
-        super().__init__(master, fg_color=("#f3ebf2", "#130914"))
+    def __init__(self, master, on_login_success, auth_controller=None):
+        super().__init__(master, fg_color=("#e2e8f0", "#0b132b"))
         self.on_login_success = on_login_success
+        self.auth_controller = auth_controller or AuthController()
+        self.modo_actual = "login"  # 'login' o 'registro'
 
-        # Centrar la tarjeta principal
+        # Centrar la tarjeta principal en la pantalla
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
@@ -16,48 +18,54 @@ class LoginView(ctk.CTkFrame):
         # ========================================================
         self.card = ctk.CTkFrame(
             self,
-            width=760,
-            height=480,
+            width=800,
+            height=540,
             corner_radius=18,
             fg_color="#ffffff",
             border_width=1,
-            border_color="#e2e8f0"
+            border_color="#cbd5e1"
         )
         self.card.grid(row=0, column=0, padx=20, pady=20)
         self.card.grid_propagate(False)
 
-        self.card.grid_columnconfigure(0, weight=0) # Panel izquierdo
-        self.card.grid_columnconfigure(1, weight=1) # Formulario derecho
+        self.card.grid_columnconfigure(0, weight=0) # Panel izquierdo (Banner Origami)
+        self.card.grid_columnconfigure(1, weight=1) # Panel derecho (Formulario)
         self.card.grid_rowconfigure(0, weight=1)
 
         # --------------------------------------------------------
-        # 1. PANEL IZQUIERDO: ARTE GEOMÉTRICO ORIGAMI NATIVO (CANVAS)
+        # 1. PANEL IZQUIERDO: ARTE GEOMÉTRICO ORIGAMI AZUL (CANVAS)
         # --------------------------------------------------------
         self._construir_banner_origami(self.card)
 
         # --------------------------------------------------------
-        # 2. PANEL DERECHO: FORMULARIO BLANCO LIMPIO NATIVO
+        # 2. PANEL DERECHO: CONTENEDOR DE FORMULARIOS
         # --------------------------------------------------------
-        self._construir_formulario(self.card)
+        self.form_container = ctk.CTkFrame(self.card, fg_color="#ffffff", corner_radius=18)
+        self.form_container.grid(row=0, column=1, sticky="nsew", padx=25, pady=15)
+        self.form_container.grid_rowconfigure(0, weight=1)
+        self.form_container.grid_columnconfigure(0, weight=1)
+
+        # Inicializar en modo login
+        self.cambiar_modo("login")
 
     def _construir_banner_origami(self, parent):
-        """Dibuja nativamente la composición geométrica de origami con la paleta de colores del diseño."""
-        w, h = 320, 480
+        """Dibuja nativamente la composición geométrica de origami con paleta azul y pestañas."""
+        w, h = 320, 540
         self.canvas_origami = tk.Canvas(
             parent,
             width=w,
             height=h,
-            bg="#f0bfd8",          # Color base rosa suave
+            bg="#bae6fd",          # Color base azul cielo suave
             highlightthickness=0
         )
         self.canvas_origami.grid(row=0, column=0, sticky="nsew")
 
-        # Capa 1: Esquina superior izquierda (vino oscuro profundo)
+        # Capa 1: Esquina superior izquierda (azul marino muy oscuro)
         self.canvas_origami.create_polygon(
             0, 0,
             140, 0,
             0, 180,
-            fill="#560f33", outline=""
+            fill="#0f172a", outline=""
         )
 
         # Sombra sutil de pliegue origami
@@ -66,25 +74,25 @@ class LoginView(ctk.CTkFrame):
             150, 0,
             165, 0,
             0, 195,
-            fill="#440b28", outline=""
+            fill="#091224", outline=""
         )
 
-        # Capa 2: Franja diagonal superior (magenta profundo)
+        # Capa 2: Franja diagonal superior (azul rey profundo)
         self.canvas_origami.create_polygon(
             0, 90,
             230, 0,
             275, 0,
             0, 290,
-            fill="#751846", outline=""
+            fill="#1e3a8a", outline=""
         )
 
-        # Capa 3: Faceta central diagonal (magenta / mora)
+        # Capa 3: Faceta central diagonal (azul intermedio)
         self.canvas_origami.create_polygon(
             0, 200,
             275, 80,
             225, 270,
             0, 370,
-            fill="#98255e", outline=""
+            fill="#1d4ed8", outline=""
         )
 
         # Sombra intermedia
@@ -93,108 +101,150 @@ class LoginView(ctk.CTkFrame):
             225, 270,
             215, 285,
             0, 375,
-            fill="#6d1541", outline=""
+            fill="#172554", outline=""
         )
 
-        # Capa 4: Faceta inferior izquierda (rosa berry intenso)
+        # Capa 4: Faceta inferior izquierda (azul celeste intenso)
         self.canvas_origami.create_polygon(
             0, 300,
             215, 285,
-            175, 430,
-            0, 455,
-            fill="#b83c7a", outline=""
+            175, 410,
+            0, 435,
+            fill="#0284c7", outline=""
         )
 
-        # Capa 5: Esquina inferior (vino medio)
+        # Capa 5: Esquina inferior (azul marino)
         self.canvas_origami.create_polygon(
-            0, 420,
-            185, 410,
-            220, h,
-            0, h,
-            fill="#6b123d", outline=""
+            0, 400,
+            185, 390,
+            220, 470,
+            0, 470,
+            fill="#0c4a6e", outline=""
         )
 
-        # Capa 6: Faceta derecha inferior (rosa medio)
+        # Capa 6: Faceta derecha inferior (azul cielo medio)
         self.canvas_origami.create_polygon(
             225, 270,
             w, 230,
-            w, h,
-            185, h,
-            fill="#d475a4", outline=""
+            w, 470,
+            185, 470,
+            fill="#38bdf8", outline=""
         )
 
-        # Pestaña curva blanca saliente hacia la izquierda (tal como en la referencia)
-        # Unión redondeada con la sección derecha blanca
-        tab_y = 175
+        # ULEAM centrado en la parte inferior del banner, en azul oscuro bien visible
+        self.canvas_origami.create_text(
+            w // 2, 505,
+            text="ULEAM",
+            font=("Arial", 18, "bold"),
+            fill="#0f172a"
+        )
+
+        # Dibujar pestañas interactivas: ACCESO y REGISTRO
+        self._redibujar_pestanas()
+
+    def _redibujar_pestanas(self):
+        """Dibuja las pestañas salientes hacia la derecha para alternar entre Acceso y Registro."""
+        w = 320
+        self.canvas_origami.delete("pestaña")
+
+        # Pestaña 1: ACCESO
+        y_acceso = 150
+        es_acceso = (self.modo_actual == "login")
+        bg_acceso = "#ffffff" if es_acceso else "#1e3a8a"
+        fg_acceso = "#0284c7" if es_acceso else "#e2e8f0"
+
         self.canvas_origami.create_oval(
-            155, tab_y - 28,
-            215, tab_y + 28,
-            fill="#ffffff", outline=""
+            160, y_acceso - 24,
+            210, y_acceso + 24,
+            fill=bg_acceso, outline="",
+            tags=("pestaña", "btn_tab_acceso")
         )
         self.canvas_origami.create_rectangle(
-            185, tab_y - 28,
-            w + 2, tab_y + 28,
-            fill="#ffffff", outline=""
+            185, y_acceso - 24,
+            w + 2, y_acceso + 24,
+            fill=bg_acceso, outline="",
+            tags=("pestaña", "btn_tab_acceso")
         )
-
-        # Texto dentro de la pestaña curva blanca
         self.canvas_origami.create_text(
-            245, tab_y,
+            245, y_acceso,
             text="ACCESO",
             font=("Arial", 11, "bold"),
-            fill="#62193c"
+            fill=fg_acceso,
+            tags=("pestaña", "btn_tab_acceso")
         )
 
-        # Texto decorativo institucional debajo de la pestaña
+        # Pestaña 2: REGISTRO
+        y_registro = 215
+        es_registro = (self.modo_actual == "registro")
+        bg_reg = "#ffffff" if es_registro else "#1e3a8a"
+        fg_reg = "#0284c7" if es_registro else "#e2e8f0"
+
+        self.canvas_origami.create_oval(
+            160, y_registro - 24,
+            210, y_registro + 24,
+            fill=bg_reg, outline="",
+            tags=("pestaña", "btn_tab_registro")
+        )
+        self.canvas_origami.create_rectangle(
+            185, y_registro - 24,
+            w + 2, y_registro + 24,
+            fill=bg_reg, outline="",
+            tags=("pestaña", "btn_tab_registro")
+        )
         self.canvas_origami.create_text(
-            245, tab_y + 55,
-            text="ULEAM",
-            font=("Arial", 13, "bold"),
-            fill="#ffffff"
+            245, y_registro,
+            text="REGISTRO",
+            font=("Arial", 11, "bold"),
+            fill=fg_reg,
+            tags=("pestaña", "btn_tab_registro")
         )
 
-    def _construir_formulario(self, parent):
-        """Construye el formulario derecho recreando fielmente los elementos y estilo de la referencia."""
-        self.form_frame = ctk.CTkFrame(parent, fg_color="#ffffff", corner_radius=18)
-        self.form_frame.grid(row=0, column=1, sticky="nsew", padx=30, pady=25)
+        # Eventos de clic y cambio de cursor para las pestañas
+        self.canvas_origami.tag_bind("btn_tab_acceso", "<Button-1>", lambda e: self.cambiar_modo("login"))
+        self.canvas_origami.tag_bind("btn_tab_registro", "<Button-1>", lambda e: self.cambiar_modo("registro"))
+        self.canvas_origami.tag_bind("pestaña", "<Enter>", lambda e: self.canvas_origami.config(cursor="hand2"))
+        self.canvas_origami.tag_bind("pestaña", "<Leave>", lambda e: self.canvas_origami.config(cursor=""))
 
-        # 1. Avatar circular superior dibujado nativamente en Canvas (con silueta blanca)
-        self.canvas_avatar = tk.Canvas(
-            self.form_frame,
-            width=76,
-            height=76,
-            bg="#ffffff",
-            highlightthickness=0
-        )
-        self.canvas_avatar.pack(pady=(10, 6))
+    def cambiar_modo(self, modo: str):
+        """Alterna entre el formulario de inicio de sesión y el formulario de registro."""
+        self.modo_actual = modo
+        self._redibujar_pestanas()
 
-        # Círculo base magenta/vino
-        self.canvas_avatar.create_oval(4, 4, 72, 72, fill="#7b1a4a", outline="")
-        # Cabeza de la silueta (círculo blanco)
-        self.canvas_avatar.create_oval(27, 18, 49, 40, outline="#ffffff", width=3)
-        # Hombros de la silueta (arco curvo blanco)
-        self.canvas_avatar.create_arc(16, 41, 60, 79, start=15, extent=150, style="arc", outline="#ffffff", width=3)
+        # Limpiar contenedor del formulario derecho
+        for widget in self.form_container.winfo_children():
+            widget.destroy()
 
-        # 2. Título "INICIAR SESIÓN"
-        self.lbl_titulo = ctk.CTkLabel(
-            self.form_frame,
-            text="INICIAR SESIÓN",
-            font=("Arial", 19, "bold"),
-            text_color="#62193c"
-        )
-        self.lbl_titulo.pack(pady=(0, 22))
+        if modo == "login":
+            self._construir_formulario_login(self.form_container)
+        else:
+            self._construir_formulario_registro(self.form_container)
 
-        # 3. Campo: Email o Usuario (Estilo minimalista con línea inferior)
-        self.user_box = ctk.CTkFrame(self.form_frame, fg_color="transparent")
-        self.user_box.pack(fill="x", padx=25, pady=(0, 2))
+    # ========================================================
+    # FORMULARIO DE INICIO DE SESIÓN
+    # ========================================================
+    def _construir_formulario_login(self, parent):
+        frame = ctk.CTkFrame(parent, fg_color="transparent")
+        frame.pack(fill="both", expand=True, padx=15, pady=10)
 
-        self.lbl_icon_user = ctk.CTkLabel(self.user_box, text="👤", font=("Arial", 15), text_color="#64748b")
-        self.lbl_icon_user.pack(side="left", padx=(0, 8))
+        # 1. Avatar circular azul
+        canvas_avatar = tk.Canvas(frame, width=64, height=64, bg="#ffffff", highlightthickness=0)
+        canvas_avatar.pack(pady=(4, 2))
+        canvas_avatar.create_oval(4, 4, 60, 60, fill="#0284c7", outline="")
+        canvas_avatar.create_oval(23, 14, 41, 32, outline="#ffffff", width=3)
+        canvas_avatar.create_arc(14, 34, 50, 66, start=15, extent=150, style="arc", outline="#ffffff", width=3)
 
+        # 2. Título
+        lbl_titulo = ctk.CTkLabel(frame, text="INICIAR SESIÓN", font=("Arial", 18, "bold"), text_color="#0284c7")
+        lbl_titulo.pack(pady=(0, 16))
+
+        # 3. Campo: Email o Usuario
+        user_box = ctk.CTkFrame(frame, fg_color="transparent")
+        user_box.pack(fill="x", padx=25, pady=(0, 2))
+        ctk.CTkLabel(user_box, text="👤", font=("Arial", 15), text_color="#0284c7").pack(side="left", padx=(0, 8))
         self.entry_usuario = ctk.CTkEntry(
-            self.user_box,
+            user_box,
             placeholder_text="Email o Usuario",
-            height=34,
+            height=32,
             font=("Arial", 13),
             fg_color="transparent",
             border_width=0,
@@ -203,22 +253,18 @@ class LoginView(ctk.CTkFrame):
         )
         self.entry_usuario.pack(side="left", fill="x", expand=True)
 
-        # Línea divisoria inferior (underline)
-        self.line_user = ctk.CTkFrame(self.form_frame, height=1, fg_color="#cbd5e1")
-        self.line_user.pack(fill="x", padx=25, pady=(0, 16))
+        line_user = ctk.CTkFrame(frame, height=1, fg_color="#cbd5e1")
+        line_user.pack(fill="x", padx=25, pady=(0, 12))
 
-        # 4. Campo: Contraseña (Estilo minimalista con línea inferior)
-        self.pass_box = ctk.CTkFrame(self.form_frame, fg_color="transparent")
-        self.pass_box.pack(fill="x", padx=25, pady=(0, 2))
-
-        self.lbl_icon_pass = ctk.CTkLabel(self.pass_box, text="🔒", font=("Arial", 15), text_color="#64748b")
-        self.lbl_icon_pass.pack(side="left", padx=(0, 8))
-
+        # 4. Campo: Contraseña
+        pass_box = ctk.CTkFrame(frame, fg_color="transparent")
+        pass_box.pack(fill="x", padx=25, pady=(0, 2))
+        ctk.CTkLabel(pass_box, text="🔒", font=("Arial", 15), text_color="#0284c7").pack(side="left", padx=(0, 8))
         self.entry_password = ctk.CTkEntry(
-            self.pass_box,
+            pass_box,
             placeholder_text="Contraseña",
             show="*",
-            height=34,
+            height=32,
             font=("Arial", 13),
             fg_color="transparent",
             border_width=0,
@@ -227,14 +273,13 @@ class LoginView(ctk.CTkFrame):
         )
         self.entry_password.pack(side="left", fill="x", expand=True)
 
-        # Línea divisoria inferior (underline)
-        self.line_pass = ctk.CTkFrame(self.form_frame, height=1, fg_color="#cbd5e1")
-        self.line_pass.pack(fill="x", padx=25, pady=(0, 14))
+        line_pass = ctk.CTkFrame(frame, height=1, fg_color="#cbd5e1")
+        line_pass.pack(fill="x", padx=25, pady=(0, 10))
 
         # 5. Checkbox para ver contraseña
         self.check_var = ctk.StringVar(value="off")
-        self.chk_mostrar = ctk.CTkCheckBox(
-            self.form_frame,
+        chk_mostrar = ctk.CTkCheckBox(
+            frame,
             text="Mostrar contraseña",
             command=self._toggle_password,
             variable=self.check_var,
@@ -244,62 +289,186 @@ class LoginView(ctk.CTkFrame):
             text_color="#64748b",
             checkbox_width=16,
             checkbox_height=16,
-            fg_color="#be4a82",
-            hover_color="#9e2f65"
+            fg_color="#0284c7",
+            hover_color="#0369a1"
         )
-        self.chk_mostrar.pack(anchor="w", padx=25, pady=(0, 16))
+        chk_mostrar.pack(anchor="w", padx=25, pady=(0, 12))
 
-        # 6. Fila inferior: ¿Olvidaste tu contraseña? + Botón píldora INGRESAR
-        self.action_box = ctk.CTkFrame(self.form_frame, fg_color="transparent")
-        self.action_box.pack(fill="x", padx=25, pady=(0, 10))
-
-        self.lbl_olvido = ctk.CTkLabel(
-            self.action_box,
-            text="¿Olvidaste tu contraseña?",
-            font=("Arial", 11),
-            text_color="#9d2963",
-            cursor="hand2"
-        )
-        self.lbl_olvido.pack(side="left")
-
+        # 6. Botón INGRESAR (Píldora grande y destacado)
         self.btn_login = ctk.CTkButton(
-            self.action_box,
+            frame,
             text="INGRESAR",
             height=36,
-            width=115,
-            font=("Arial", 12, "bold"),
-            fg_color="#be4a82",
-            hover_color="#9e2f65",
+            font=("Arial", 13, "bold"),
+            fg_color="#0284c7",
+            hover_color="#0369a1",
             text_color="#ffffff",
             corner_radius=18,
             command=self._ejecutar_login
         )
-        self.btn_login.pack(side="right")
+        self.btn_login.pack(fill="x", padx=25, pady=(0, 10))
 
-        # 7. Mensaje de estado
-        self.lbl_mensaje = ctk.CTkLabel(
-            self.form_frame,
-            text="",
+        # 7. Apartado debajo de ingresar: Registrarse
+        registro_box = ctk.CTkFrame(frame, fg_color="transparent")
+        registro_box.pack(fill="x", padx=25, pady=(4, 6))
+
+        ctk.CTkLabel(
+            registro_box,
+            text="¿No tienes una cuenta?",
             font=("Arial", 11),
-            wraplength=340
+            text_color="#64748b"
+        ).pack(side="left")
+
+        btn_ir_registro = ctk.CTkButton(
+            registro_box,
+            text="Registrarse",
+            height=26,
+            font=("Arial", 11, "bold"),
+            fg_color="#f0f9ff",
+            text_color="#0284c7",
+            hover_color="#e0f2fe",
+            border_width=1,
+            border_color="#bae6fd",
+            corner_radius=13,
+            command=lambda: self.cambiar_modo("registro")
         )
+        btn_ir_registro.pack(side="right")
+
+        # 8. Mensaje de estado
+        self.lbl_mensaje = ctk.CTkLabel(frame, text="", font=("Arial", 11), wraplength=340)
         self.lbl_mensaje.pack(fill="x", padx=25, pady=(4, 4))
 
-        # Atajo Enter para iniciar sesión
+        # Atajos de teclado
         self.entry_usuario.bind("<Return>", lambda e: self._ejecutar_login())
         self.entry_password.bind("<Return>", lambda e: self._ejecutar_login())
-
-        # Foco en el primer campo
         self.entry_usuario.focus()
 
+    # ========================================================
+    # FORMULARIO DE REGISTRO DE USUARIOS
+    # ========================================================
+    def _construir_formulario_registro(self, parent):
+        frame = ctk.CTkFrame(parent, fg_color="transparent")
+        frame.pack(fill="both", expand=True, padx=15, pady=6)
+
+        # 1. Título
+        lbl_titulo = ctk.CTkLabel(frame, text="REGISTRO DE USUARIO", font=("Arial", 18, "bold"), text_color="#0284c7")
+        lbl_titulo.pack(pady=(4, 2))
+
+        lbl_sub = ctk.CTkLabel(frame, text="Completa los datos para registrarte en el sistema", font=("Arial", 11), text_color="#64748b")
+        lbl_sub.pack(pady=(0, 10))
+
+        # 2. Cédula / Identificación
+        self.reg_cedula = self._crear_campo(frame, "Cédula / Identificación", "🆔")
+
+        # 3. Nombre y Apellido (En dos columnas compactas)
+        fila_nombres = ctk.CTkFrame(frame, fg_color="transparent")
+        fila_nombres.pack(fill="x", padx=25, pady=(0, 4))
+        fila_nombres.grid_columnconfigure(0, weight=1)
+        fila_nombres.grid_columnconfigure(1, weight=1)
+
+        self.reg_nombre = ctk.CTkEntry(fila_nombres, placeholder_text="Nombre", height=30, font=("Arial", 12))
+        self.reg_nombre.grid(row=0, column=0, padx=(0, 4), sticky="ew")
+
+        self.reg_apellido = ctk.CTkEntry(fila_nombres, placeholder_text="Apellido", height=30, font=("Arial", 12))
+        self.reg_apellido.grid(row=0, column=1, padx=(4, 0), sticky="ew")
+
+        # 4. Correo Institucional
+        self.reg_email = self._crear_campo(frame, "Correo (@uleam.edu.ec)", "✉️")
+
+        # 5. Nombre de usuario y Contraseña (En dos columnas)
+        fila_cred = ctk.CTkFrame(frame, fg_color="transparent")
+        fila_cred.pack(fill="x", padx=25, pady=(0, 4))
+        fila_cred.grid_columnconfigure(0, weight=1)
+        fila_cred.grid_columnconfigure(1, weight=1)
+
+        self.reg_user = ctk.CTkEntry(fila_cred, placeholder_text="Usuario", height=30, font=("Arial", 12))
+        self.reg_user.grid(row=0, column=0, padx=(0, 4), sticky="ew")
+
+        self.reg_pass = ctk.CTkEntry(fila_cred, placeholder_text="Contraseña", show="*", height=30, font=("Arial", 12))
+        self.reg_pass.grid(row=0, column=1, padx=(4, 0), sticky="ew")
+
+        # 6. Selector de Rol
+        rol_box = ctk.CTkFrame(frame, fg_color="transparent")
+        rol_box.pack(fill="x", padx=25, pady=(4, 8))
+        ctk.CTkLabel(rol_box, text="Rol:", font=("Arial", 11, "bold"), text_color="#0284c7").pack(side="left", padx=(0, 8))
+
+        self.reg_rol = ctk.CTkSegmentedButton(
+            rol_box,
+            values=["Docente", "Estudiante", "Administrador"],
+            selected_color="#0284c7",
+            selected_hover_color="#0369a1",
+            font=("Arial", 11)
+        )
+        self.reg_rol.set("Docente")
+        self.reg_rol.pack(side="left", fill="x", expand=True)
+
+        # 7. Botón REGISTRARSE (Funcional)
+        self.btn_registrar = ctk.CTkButton(
+            frame,
+            text="REGISTRARSE",
+            height=34,
+            font=("Arial", 13, "bold"),
+            fg_color="#0284c7",
+            hover_color="#0369a1",
+            text_color="#ffffff",
+            corner_radius=17,
+            command=self._ejecutar_registro
+        )
+        self.btn_registrar.pack(fill="x", padx=25, pady=(4, 6))
+
+        # 8. Volver al Login
+        login_box = ctk.CTkFrame(frame, fg_color="transparent")
+        login_box.pack(fill="x", padx=25, pady=(2, 4))
+        ctk.CTkLabel(login_box, text="¿Ya tienes cuenta?", font=("Arial", 11), text_color="#64748b").pack(side="left")
+        ctk.CTkButton(
+            login_box,
+            text="Iniciar Sesión",
+            height=24,
+            font=("Arial", 11, "bold"),
+            fg_color="#f0f9ff",
+            text_color="#0284c7",
+            hover_color="#e0f2fe",
+            border_width=1,
+            border_color="#bae6fd",
+            corner_radius=12,
+            command=lambda: self.cambiar_modo("login")
+        ).pack(side="right")
+
+        # 9. Mensaje de estado
+        self.lbl_mensaje_reg = ctk.CTkLabel(frame, text="", font=("Arial", 11), wraplength=340)
+        self.lbl_mensaje_reg.pack(fill="x", padx=25, pady=(2, 2))
+
+        self.reg_cedula.focus()
+
+    def _crear_campo(self, parent, placeholder: str, icono: str):
+        box = ctk.CTkFrame(parent, fg_color="transparent")
+        box.pack(fill="x", padx=25, pady=(0, 2))
+        ctk.CTkLabel(box, text=icono, font=("Arial", 13), text_color="#0284c7").pack(side="left", padx=(0, 6))
+        entry = ctk.CTkEntry(
+            box,
+            placeholder_text=placeholder,
+            height=30,
+            font=("Arial", 12),
+            fg_color="transparent",
+            border_width=0,
+            text_color="#0f172a",
+            placeholder_text_color="#94a3b8"
+        )
+        entry.pack(side="left", fill="x", expand=True)
+
+        line = ctk.CTkFrame(parent, height=1, fg_color="#cbd5e1")
+        line.pack(fill="x", padx=25, pady=(0, 8))
+        return entry
+
     def _toggle_password(self):
-        """Alterna visibilidad de la contraseña."""
+        """Alterna visibilidad de la contraseña en login."""
         if self.check_var.get() == "on":
             self.entry_password.configure(show="")
         else:
             self.entry_password.configure(show="*")
 
     def _ejecutar_login(self):
+        """Valida e inicia sesión contra Supabase."""
         usuario = self.entry_usuario.get().strip()
         contrasena = self.entry_password.get().strip()
 
@@ -311,7 +480,7 @@ class LoginView(ctk.CTkFrame):
         self.lbl_mensaje.configure(text="")
         self.update_idletasks()
 
-        exito, mensaje, usuario_obj = AuthController.iniciar_sesion(usuario, contrasena)
+        exito, mensaje, usuario_obj = self.auth_controller.iniciar_sesion(usuario, contrasena)
 
         if exito:
             self.lbl_mensaje.configure(text=f"✅ {mensaje}", text_color="#16a34a")
@@ -320,3 +489,47 @@ class LoginView(ctk.CTkFrame):
         else:
             self.lbl_mensaje.configure(text=f"❌ {mensaje}", text_color="#dc2626")
             self.btn_login.configure(state="normal", text="INGRESAR")
+
+    def _ejecutar_registro(self):
+        """Registra un nuevo usuario en Supabase."""
+        cedula = self.reg_cedula.get().strip()
+        nombre = self.reg_nombre.get().strip()
+        apellido = self.reg_apellido.get().strip()
+        email = self.reg_email.get().strip()
+        username = self.reg_user.get().strip()
+        contrasena = self.reg_pass.get().strip()
+        rol = self.reg_rol.get()
+
+        if not all([cedula, nombre, apellido, email, username, contrasena]):
+            self.lbl_mensaje_reg.configure(text="⚠️ Completa todos los campos obligatorios.", text_color="#d97706")
+            return
+
+        self.btn_registrar.configure(state="disabled", text="Registrando...")
+        self.lbl_mensaje_reg.configure(text="")
+        self.update_idletasks()
+
+        exito, mensaje = self.auth_controller.registrar_usuario(
+            identificacion=cedula,
+            nombre=nombre,
+            apellido=apellido,
+            email=email,
+            username=username,
+            contrasena=contrasena,
+            rol=rol
+        )
+
+        if exito:
+            self.lbl_mensaje_reg.configure(text=f"✅ {mensaje}", text_color="#16a34a")
+            self.update_idletasks()
+            # Redirigir automáticamente al login tras 1.2 segundos y pre-llenar usuario
+            self.after(1200, lambda: self._ir_a_login_con_datos(username))
+        else:
+            self.lbl_mensaje_reg.configure(text=f"❌ {mensaje}", text_color="#dc2626")
+            self.btn_registrar.configure(state="normal", text="REGISTRARSE")
+
+    def _ir_a_login_con_datos(self, username: str):
+        self.cambiar_modo("login")
+        self.entry_usuario.delete(0, tk.END)
+        self.entry_usuario.insert(0, username)
+        self.entry_password.focus()
+        self.lbl_mensaje.configure(text="✅ Registro completado. Ingresa tu contraseña para acceder.", text_color="#16a34a")
