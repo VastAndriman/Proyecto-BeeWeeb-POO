@@ -6,6 +6,20 @@ from vistas.estudiante_view import EstudianteView
 
 
 class EstudianteViewTests(unittest.TestCase):
+    def test_avisa_si_no_se_pueden_cargar_los_cursos(self):
+        db = Mock()
+        db.table.return_value.select.return_value.execute.side_effect = RuntimeError("sin conexión")
+        vista = SimpleNamespace(
+            db=db, cursos_map={"Curso anterior": 1},
+            combo_curso=Mock(), lbl_mensaje=Mock(),
+        )
+
+        EstudianteView.cargar_cursos(vista)
+
+        self.assertEqual(vista.cursos_map, {})
+        vista.combo_curso.set.assert_called_with("Sin curso")
+        self.assertIn("No se pudieron cargar", vista.lbl_mensaje.configure.call_args.kwargs["text"])
+
     def test_no_registra_campos_con_solo_espacios(self):
         campos = {
             "entry_identificacion": "1234567890",

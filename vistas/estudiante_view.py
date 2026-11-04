@@ -39,7 +39,6 @@ class EstudianteView(ctk.CTkFrame):
         self.cursos_map = {}
         self.combo_curso = ctk.CTkOptionMenu(formulario, values=["Sin curso"])
         self.combo_curso.pack(fill="x", padx=18, pady=5)
-        self.cargar_cursos()
 
         self.btn_guardar = ctk.CTkButton(
             formulario, text="Guardar estudiante", command=self.guardar_estudiante
@@ -49,6 +48,7 @@ class EstudianteView(ctk.CTkFrame):
             formulario, text="", font=("Arial", 11), wraplength=290
         )
         self.lbl_mensaje.pack(fill="x", padx=18, pady=(0, 12))
+        self.cargar_cursos()
 
         ctk.CTkLabel(
             listado, text="Estudiantes registrados", font=("Arial", 16, "bold")
@@ -70,6 +70,10 @@ class EstudianteView(ctk.CTkFrame):
             self.cursos_map = {}
             self.combo_curso.configure(values=["Sin curso"])
             self.combo_curso.set("Sin curso")
+            self.lbl_mensaje.configure(
+                text="No se pudieron cargar los cursos. Puedes registrar sin curso o intentar de nuevo.",
+                text_color="#b42333",
+            )
 
     def cargar_datos_dinamicos(self):
         self.cargar_cursos()
