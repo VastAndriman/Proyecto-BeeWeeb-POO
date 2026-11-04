@@ -203,7 +203,7 @@ class HorarioView(ctk.CTkFrame):
             )
         else:
             self.lbl_info_aforo.configure(
-                text="ℹ️ Capacidad estimada: Seleccionada manualmente",
+                text="ℹ️ Selecciona un aula registrada para conocer su capacidad",
                 text_color="#94a3b8"
             )
 
@@ -223,9 +223,8 @@ class HorarioView(ctk.CTkFrame):
             self.combo_docente.configure(values=docentes_vals)
             self.combo_docente.set(docentes_vals[0])
         else:
-            self.combo_docente.configure(values=["1 - Docente Predeterminado"])
-            self.combo_docente.set("1 - Docente Predeterminado")
-            self.docentes_map["1 - Docente Predeterminado"] = 1
+            self.combo_docente.configure(values=["Sin docentes registrados"])
+            self.combo_docente.set("Sin docentes registrados")
 
         # 2. Cargar Aulas
         aulas = self.horario_controller.obtener_aulas()
@@ -240,9 +239,9 @@ class HorarioView(ctk.CTkFrame):
             self.combo_aula.set(aulas_vals[0])
             self.al_seleccionar_aula(aulas_vals[0])
         else:
-            self.combo_aula.configure(values=["1 - Aula General"])
-            self.combo_aula.set("1 - Aula General")
-            self.aulas_map["1 - Aula General"] = {"id": 1, "capacidad": 40}
+            self.combo_aula.configure(values=["Sin aulas registradas"])
+            self.combo_aula.set("Sin aulas registradas")
+            self.al_seleccionar_aula("")
 
         # 3. Cargar Materias
         materias = self.horario_controller.obtener_materias()
@@ -252,9 +251,11 @@ class HorarioView(ctk.CTkFrame):
             label = f"{m.get('nombre', 'Materia')} [ID: {m.get('id')}]"
             self.materias_map[label] = m.get('id')
             materias_vals.append(label)
-        self.combo_materia.configure(values=materias_vals)
+        self.combo_materia.configure(values=materias_vals or ["Sin materias registradas"])
         if materias_vals:
             self.combo_materia.set(materias_vals[0])
+        else:
+            self.combo_materia.set("Sin materias registradas")
 
         # 4. Cargar Cursos
         cursos = self.horario_controller.obtener_cursos()
@@ -264,13 +265,26 @@ class HorarioView(ctk.CTkFrame):
             label = f"{c.get('nombre', 'Curso')} [ID: {c.get('id')}]"
             self.cursos_map[label] = c.get('id')
             cursos_vals.append(label)
-        self.combo_curso.configure(values=cursos_vals)
+        self.combo_curso.configure(values=cursos_vals or ["Sin cursos registrados"])
         if cursos_vals:
             self.combo_curso.set(cursos_vals[0])
+        else:
+            self.combo_curso.set("Sin cursos registrados")
 
         # 5. Cargar Horarios Registrados en el historial
         self.refrescar_historial_horarios()
-        self.lbl_mensaje.configure(text="✅ Datos sincronizados correctamente.", text_color="#34d399")
+        faltantes = [nombre for nombre, opciones in (
+            ("docentes", docentes_vals), ("aulas", aulas_vals),
+            ("materias", materias_vals), ("cursos", cursos_vals)
+        ) if not opciones]
+        self.btn_crear.configure(state="disabled" if faltantes else "normal")
+        if faltantes:
+            self.lbl_mensaje.configure(
+                text="⚠️ Faltan datos reales: " + ", ".join(faltantes) + ".",
+                text_color="orange"
+            )
+        else:
+            self.lbl_mensaje.configure(text="✅ Datos sincronizados correctamente.", text_color="#34d399")
 
     def refrescar_historial_horarios(self):
         """Muestra los horarios ya registrados en la base de datos con nombres legibles"""
@@ -310,20 +324,10 @@ class HorarioView(ctk.CTkFrame):
             self.textbox_horarios.insert("end", linea)
 
     def _resolver_id(self, valor, mapa):
-        """Extrae el ID entero ya sea del mapa de opciones o de un número ingresado directamente"""
+        """Acepta únicamente una opción cargada desde la base de datos."""
         if valor in mapa:
             res = mapa[valor]
             return res["id"] if isinstance(res, dict) else res
-        # Si el usuario escribió directamente un número o un texto tipo 'ID: 5'
-        val_str = str(valor).strip()
-        if val_str.isdigit():
-            return int(val_str)
-        if "[ID:" in val_str:
-            try:
-                sub = val_str.split("[ID:")[1].split("]")[0].strip()
-                return int(sub)
-            except Exception:
-                pass
         return None
 
     def crear_horario(self):

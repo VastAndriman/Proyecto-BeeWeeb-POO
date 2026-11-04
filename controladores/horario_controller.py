@@ -52,36 +52,17 @@ class HorarioController:
         inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
             res = inst.db.table("materias").select("*").execute()
-            if res.data:
-                return res.data
+            return res.data or []
         except Exception:
-            pass
-        # Asignaturas predeterminadas si la tabla no está creada
-        return [
-            {"id": 1, "nombre": "Programación Orientada a Objetos"},
-            {"id": 2, "nombre": "Estructura de Datos"},
-            {"id": 3, "nombre": "Base de Datos"},
-            {"id": 4, "nombre": "Ingeniería de Software"},
-            {"id": 5, "nombre": "Redes y Conectividad"},
-            {"id": 6, "nombre": "Sistemas Operativos"}
-        ]
+            return []
 
     def obtener_cursos(self_or_cls=None):
         inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
             res = inst.db.table("cursos").select("*").execute()
-            if res.data:
-                return res.data
+            return res.data or []
         except Exception:
-            pass
-        # Cursos predeterminados si la tabla no está creada
-        return [
-            {"id": 101, "nombre": "Curso 101 - Paralelo A"},
-            {"id": 102, "nombre": "Curso 102 - Paralelo B"},
-            {"id": 201, "nombre": "Curso 201 - Paralelo A"},
-            {"id": 202, "nombre": "Curso 202 - Paralelo B"},
-            {"id": 301, "nombre": "Curso 301 - Paralelo A"}
-        ]
+            return []
 
     def obtener_horarios_registrados(self_or_cls=None):
         inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
