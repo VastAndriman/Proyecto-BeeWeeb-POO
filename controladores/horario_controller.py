@@ -97,14 +97,24 @@ class HorarioController:
         if inicio >= fin:
             return False, "La hora de fin debe ser posterior a la hora de inicio."
 
+        try:
+            cantidad_estudiantes = int(num_estudiantes)
+        except (TypeError, ValueError):
+            return False, "Ingresa una cantidad válida de estudiantes."
+        if cantidad_estudiantes <= 0:
+            return False, "La cantidad de estudiantes debe ser mayor a cero."
+
         client = inst.db
         
         # 1. Validación de Aforo: Capacidad(idAula) >= NumEstudiantes(idCurso)
         aula_res = client.table("aulas").select("capacidad").eq("id", aula_id).execute()
-        if aula_res.data:
-            capacidad_aula = aula_res.data[0]['capacidad']
-            if capacidad_aula < num_estudiantes:
-                return False, f"Error: Aforo insuficiente. El aula tiene capacidad para {capacidad_aula} estudiantes, pero se ingresaron {num_estudiantes}."
+        if not aula_res.data:
+            return False, "El aula seleccionada no existe. Actualiza la lista de aulas."
+        capacidad_aula = aula_res.data[0].get("capacidad")
+        if capacidad_aula is None:
+            return False, "El aula no tiene una capacidad registrada."
+        if cantidad_estudiantes > int(capacidad_aula):
+            return False, f"Error: Aforo insuficiente. El aula tiene capacidad para {capacidad_aula} estudiantes, pero se ingresaron {cantidad_estudiantes}."
 
         # 2. Consultar horarios existentes para validar cruces concurrentes
         horarios_existentes = client.table("horarios").select("*").eq("dia", dia).execute()
