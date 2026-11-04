@@ -46,6 +46,9 @@ antiguo script de autenticación que permitía consultar la tabla de usuarios.
   y la relación estudiante-curso sin modificar la base.
 - `python test_conexion.py` comprueba la conexión con una consulta de solo lectura.
 
+En **Reportes**, genera primero la vista de horarios o aulas y luego pulsa
+**Exportar CSV** para guardar los datos en un archivo que se puede abrir en Excel.
+
 ## Patrones creacionales
 
 - **Singleton:** `SupabaseConnection.get_client()` comparte el cliente de Supabase.
