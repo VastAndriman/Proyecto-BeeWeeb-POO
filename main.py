@@ -89,7 +89,7 @@ class BeeWeekApp(ctk.CTk):
         # Actualizar datos del usuario logueado en la barra lateral y dashboard
         nombre_completo = usuario.get_nombre_completo()
         self.lbl_user.configure(
-            text=f"👤 {nombre_completo}\n🏷️ Rol: {usuario.obtener_tipo()}\n🌐 uleam.edu.ec"
+            text=f"👤 {nombre_completo}\n🏷️ Rol: {usuario.obtener_tipo()}\n✉ {usuario.email}"
         )
         self.lbl_bienvenida.configure(text=f"Bienvenido, {nombre_completo}")
 
