@@ -1,11 +1,11 @@
-from modelos.aula import Aula
+"""Comprueba la conexión sin crear registros de prueba."""
 
-# Creamos un objeto Aula de prueba
-nueva_aula = Aula(numero="101", capacidad=40, tipo="Laboratorio")
+from conexion.supabase_client import SupabaseConnection
 
-# Intentamos guardarlo en Supabase
-try:
-    nueva_aula.guardar()
-    print("¡Conexión exitosa! El aula se guardó en Supabase.")
-except Exception as e:
-    print(f"Ocurrió un error al conectar o guardar: {e}")
+
+if __name__ == "__main__":
+    try:
+        SupabaseConnection.get_client().table("aulas").select("id").limit(1).execute()
+        print("Conexión con Supabase correcta.")
+    except Exception as error:
+        print(f"No se pudo conectar con Supabase: {error}")

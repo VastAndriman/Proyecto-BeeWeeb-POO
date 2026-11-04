@@ -1,6 +1,5 @@
 from modelos.persona import Persona
 from conexion.supabase_client import SupabaseConnection
-import hashlib
 
 class Usuario(Persona):
     def __init__(self, identificacion: str, nombre: str, apellido: str, email: str, rol: str, username: str, id_usuario: int = None, activo: bool = True, db_client=None):
@@ -42,22 +41,15 @@ class Usuario(Persona):
     def email(self) -> str:
         return self._email
 
-    @staticmethod
-    def hash_password(password: str) -> str:
-        """Genera el hash SHA-256 de una contraseña."""
-        return hashlib.sha256(password.strip().encode("utf-8")).hexdigest()
-
     def guardar(self, contrasena_plana: str):
-        """Persiste el nuevo usuario en Supabase con su contraseña cifrada."""
+        """Registra la cuenta mediante la función protegida de Supabase."""
         client = self.db if self.db is not None else SupabaseConnection.get_client()
-        data = {
-            "identificacion": self._identificacion,
-            "nombre": self._nombre,
-            "apellido": self._apellido,
-            "email": self._email,
-            "username": self.__username,
-            "password_hash": self.hash_password(contrasena_plana),
-            "rol": self.__rol,
-            "activo": self.__activo
-        }
-        return client.table("usuarios").insert(data).execute()
+        return client.rpc("beeweek_register", {
+            "p_identificacion": self._identificacion,
+            "p_nombre": self._nombre,
+            "p_apellido": self._apellido,
+            "p_email": self._email,
+            "p_username": self.__username,
+            "p_password": contrasena_plana,
+            "p_rol": self.__rol,
+        }).execute()

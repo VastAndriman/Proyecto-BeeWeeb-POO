@@ -449,7 +449,7 @@ class LoginView(ctk.CTkFrame):
 
         self.reg_rol = ctk.CTkSegmentedButton(
             rol_box,
-            values=["Docente", "Estudiante", "Administrador"],
+            values=["Docente", "Estudiante"],
             fg_color="#e8e1fb",
             selected_color="#e8e1fb",
             selected_hover_color="#d0c1ef",

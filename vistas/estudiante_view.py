@@ -34,6 +34,11 @@ class EstudianteView(ctk.CTkFrame):
             entrada.pack(fill="x", padx=18, pady=5)
             setattr(self, atributo, entrada)
 
+        self.cursos_map = {}
+        self.combo_curso = ctk.CTkOptionMenu(formulario, values=["Sin curso"])
+        self.combo_curso.pack(fill="x", padx=18, pady=5)
+        self.cargar_cursos()
+
         self.btn_guardar = ctk.CTkButton(
             formulario, text="Guardar estudiante", command=self.guardar_estudiante
         )
@@ -50,6 +55,24 @@ class EstudianteView(ctk.CTkFrame):
         self.textbox.pack(fill="both", expand=True, padx=18, pady=(0, 18))
         self.cargar_estudiantes()
 
+    def cargar_cursos(self):
+        try:
+            cursos = self.db.table("cursos").select("id,paralelo").execute().data or []
+            self.cursos_map = {
+                f"{curso['paralelo']} (ID {curso['id']})": curso["id"]
+                for curso in cursos
+            }
+            self.combo_curso.configure(values=["Sin curso", *self.cursos_map])
+            self.combo_curso.set("Sin curso")
+        except Exception:
+            self.cursos_map = {}
+            self.combo_curso.configure(values=["Sin curso"])
+            self.combo_curso.set("Sin curso")
+
+    def cargar_datos_dinamicos(self):
+        self.cargar_cursos()
+        self.cargar_estudiantes()
+
     def guardar_estudiante(self):
         identificacion = self.entry_identificacion.get()
         nombre = self.entry_nombre.get()
@@ -57,6 +80,7 @@ class EstudianteView(ctk.CTkFrame):
         email = self.entry_email.get()
         matricula = self.entry_matricula.get()
         carrera = self.entry_carrera.get()
+        curso_id = self.cursos_map.get(self.combo_curso.get())
         
         if not identificacion or not nombre or not apellido or not email or not matricula or not carrera:
             self.lbl_mensaje.configure(text="Por favor completa todos los campos.", text_color="orange")
@@ -70,7 +94,8 @@ class EstudianteView(ctk.CTkFrame):
                 "apellido": apellido,
                 "email": email,
                 "matricula": matricula,
-                "carrera": carrera
+                "carrera": carrera,
+                "curso_id": curso_id
             }
             client.table("estudiantes").insert(data).execute()
             self.lbl_mensaje.configure(text="¡Estudiante guardado con éxito en la nube!", text_color="green")
@@ -82,6 +107,7 @@ class EstudianteView(ctk.CTkFrame):
             self.entry_email.delete(0, 'end')
             self.entry_matricula.delete(0, 'end')
             self.entry_carrera.delete(0, 'end')
+            self.combo_curso.set("Sin curso")
             self.cargar_estudiantes()
         except Exception as e:
             self.lbl_mensaje.configure(text=f"Error al guardar: {e}", text_color="red")
@@ -94,10 +120,13 @@ class EstudianteView(ctk.CTkFrame):
             if not estudiantes:
                 self.textbox.insert("end", "No hay estudiantes registrados todavía.")
                 return
+            cursos = self.db.table("cursos").select("id,paralelo").execute().data or []
+            nombres_curso = {str(curso["id"]): curso["paralelo"] for curso in cursos}
             for estudiante in estudiantes:
                 nombre = f"{estudiante.get('nombre', '')} {estudiante.get('apellido', '')}".strip()
                 matricula = estudiante.get("matricula", "")
                 carrera = estudiante.get("carrera", "")
-                self.textbox.insert("end", f"{matricula:<14} | {nombre:<28} | {carrera}\n")
+                curso = nombres_curso.get(str(estudiante.get("curso_id")), "Sin curso")
+                self.textbox.insert("end", f"{matricula:<14} | {nombre:<28} | {carrera} | {curso}\n")
         except Exception as error:
             self.textbox.insert("end", f"No se pudieron cargar los estudiantes: {error}")

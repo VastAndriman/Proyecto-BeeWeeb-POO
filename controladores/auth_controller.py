@@ -53,27 +53,14 @@ class AuthController:
 
         usuario_limpio = str(usuario_o_email).strip()
         contrasena_limpia = str(contrasena).strip()
-        contrasena_hash = Usuario.hash_password(contrasena_limpia)
-
         try:
-            client = self.db
-
-            # Consultar si coincide por username o por email
-            query = client.table("usuarios").select("*").or_(f"username.eq.{usuario_limpio},email.eq.{usuario_limpio}").execute()
-
-            if not query.data or len(query.data) == 0:
-                return False, "Credenciales incorrectas: usuario no encontrado.", None
-
-            user_record = query.data[0]
-
-            # Validar si el usuario está activo
-            if not user_record.get("activo", True):
-                return False, "Esta cuenta ha sido desactivada. Consulta con administración.", None
-
-            # Validar contraseña (compara con hash SHA-256 o texto plano de respaldo)
-            hash_almacenado = user_record.get("password_hash", "")
-            if hash_almacenado != contrasena_hash and hash_almacenado != contrasena_limpia:
-                return False, "Contraseña incorrecta. Inténtalo nuevamente.", None
+            respuesta = self.db.rpc("beeweek_login", {
+                "p_login": usuario_limpio,
+                "p_password": contrasena_limpia,
+            }).execute()
+            user_record = respuesta.data
+            if not user_record:
+                return False, "Usuario o contraseña incorrectos, o cuenta desactivada.", None
 
             # Instanciar el objeto Usuario (POO)
             usuario_logueado = Usuario(
@@ -92,8 +79,10 @@ class AuthController:
             AuthController._usuario_actual = usuario_logueado
             return True, f"¡Bienvenido, {usuario_logueado.get_nombre_completo()}!", usuario_logueado
 
-        except Exception as e:
-            return False, f"Error de conexión: {str(e)}", None
+        except Exception as error:
+            if "PGRST202" in str(error):
+                return False, "Falta aplicar la migración de acceso en Supabase.", None
+            return False, "No se pudo validar la cuenta. Revisa la conexión e inténtalo de nuevo.", None
 
     def registrar_usuario(self_or_id=None, identificacion: str = None, nombre: str = None, apellido: str = None, email: str = None, username: str = None, contrasena: str = None, rol: str = "Docente", *args, **kwargs) -> tuple[bool, str]:
         """
@@ -127,33 +116,28 @@ class AuthController:
         username_limpio = username.strip()
         contrasena_limpia = contrasena.strip()
 
-        if len(contrasena_limpia) < 4:
-            return False, "La contraseña debe tener al menos 4 caracteres."
+        if len(contrasena_limpia) < 8:
+            return False, "La contraseña debe tener al menos 8 caracteres."
+        if rol not in ("Docente", "Estudiante"):
+            return False, "El rol seleccionado no está disponible para registro."
 
         try:
-            client = self.db
-
-            # Verificar si ya existe el usuario por cédula, username o email
-            existente = client.table("usuarios").select("id").or_(
-                f"identificacion.eq.{identificacion_limpia},username.eq.{username_limpio},email.eq.{email_limpio}"
-            ).execute()
-
-            if existente.data and len(existente.data) > 0:
-                return False, "Ya existe una cuenta con esa identificación, usuario o correo."
-
-            nuevo_usuario = Usuario(
-                identificacion=identificacion_limpia,
-                nombre=nombre_limpio,
-                apellido=apellido_limpio,
-                email=email_limpio,
-                rol=rol,
-                username=username_limpio,
-                activo=True,
-                db_client=self.db
-            )
-            nuevo_usuario.guardar(contrasena_limpia)
+            self.db.rpc("beeweek_register", {
+                "p_identificacion": identificacion_limpia,
+                "p_nombre": nombre_limpio,
+                "p_apellido": apellido_limpio,
+                "p_email": email_limpio,
+                "p_username": username_limpio,
+                "p_password": contrasena_limpia,
+                "p_rol": rol,
+            }).execute()
             return True, "¡Cuenta creada con éxito! Ya puedes iniciar sesión."
 
-        except Exception as e:
-            return False, f"Error al registrar: {str(e)}"
+        except Exception as error:
+            detalle = str(error)
+            if "23505" in detalle:
+                return False, "Ya existe una cuenta con esa identificación, usuario o correo."
+            if "PGRST202" in detalle:
+                return False, "Falta aplicar la migración de acceso en Supabase."
+            return False, "No se pudo registrar la cuenta. Revisa la conexión e inténtalo de nuevo."
 
