@@ -14,7 +14,7 @@ from vistas.docente_view import DocenteView
 from vistas.login_view import LoginView
 from controladores.auth_controller import AuthController
 from controladores.horario_controller import HorarioController
-from conexion.supabase_client import SupabaseConnection, supabase
+from conexion.supabase_client import SupabaseConnection
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -29,7 +29,7 @@ class BeeWeekApp(ctk.CTk):
         # ========================================================
         # COMPOSITION ROOT: Inyección de Dependencias
         # ========================================================
-        self.db_client = db_client or SupabaseConnection.get_client()
+        self.db_client = db_client if db_client is not None else SupabaseConnection.get_client()
         self.auth_controller = AuthController(self.db_client)
         self.horario_controller = HorarioController(self.db_client)
 
@@ -157,7 +157,7 @@ class BeeWeekApp(ctk.CTk):
         # ==========================================
         # 2. CONTENEDOR PRINCIPAL
         
-        self.content_area = ctk.CTkFrame(self, fg_color=("#f1f5f9", "   #111827"))
+        self.content_area = ctk.CTkFrame(self, fg_color=("#f1f5f9", "#111827"))
         self.content_area.grid(row=0, column=1, sticky="nsew", padx=0, pady=0)
         self.content_area.grid_rowconfigure(0, weight=1)
         self.content_area.grid_columnconfigure(0, weight=1)
@@ -168,8 +168,8 @@ class BeeWeekApp(ctk.CTk):
         
         self.vistas["calendario"] = CalendarioView(self.content_area, horario_controller=self.horario_controller)
         self.vistas["horarios"] = HorarioView(self.content_area, horario_controller=self.horario_controller)
-        self.vistas["aulas"] = AulasView(self.content_area)
-        self.vistas["docentes"] = DocenteView(self.content_area)
+        self.vistas["aulas"] = AulasView(self.content_area, db_client=self.db_client)
+        self.vistas["docentes"] = DocenteView(self.content_area, db_client=self.db_client)
         self.vistas["reportes"] = ReportesView(self.content_area, horario_controller=self.horario_controller)
 
     def _construir_dashboard(self, parent):

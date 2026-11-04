@@ -1,11 +1,10 @@
 import customtkinter as ctk
-from conexion.supabase_client import supabase
 from controladores.horario_controller import HorarioController
 
 class CalendarioView(ctk.CTkFrame):
     def __init__(self, master, horario_controller=None):
         super().__init__(master, fg_color="transparent")
-        self.horario_controller = horario_controller or HorarioController()
+        self.horario_controller = horario_controller if horario_controller is not None else HorarioController()
         
         # Header / Título del módulo
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")

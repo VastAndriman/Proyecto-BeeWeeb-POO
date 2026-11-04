@@ -1,11 +1,10 @@
 import customtkinter as ctk
-from conexion.supabase_client import supabase
 from controladores.horario_controller import HorarioController
 
 class ReportesView(ctk.CTkFrame):
     def __init__(self, master, horario_controller=None):
         super().__init__(master, fg_color="transparent")
-        self.horario_controller = horario_controller or HorarioController()
+        self.horario_controller = horario_controller if horario_controller is not None else HorarioController()
         
         # Header / Título del módulo
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -47,7 +46,7 @@ class ReportesView(ctk.CTkFrame):
 
         try:
             if tipo == "Aulas y Aforo":
-                res = supabase.table("aulas").select("*").execute()
+                res = self.horario_controller.db.table("aulas").select("*").execute()
                 data = res.data if res.data else []
                 self.txt_reporte.insert("end", f"{'ID':<6} | {'NÚMERO':<12} | {'CAPACIDAD':<14} | {'TIPO':<20}\n")
                 self.txt_reporte.insert("end", "-" * 60 + "\n")

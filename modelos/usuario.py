@@ -3,12 +3,13 @@ from conexion.supabase_client import SupabaseConnection
 import hashlib
 
 class Usuario(Persona):
-    def __init__(self, identificacion: str, nombre: str, apellido: str, email: str, rol: str, username: str, id_usuario: int = None, activo: bool = True):
+    def __init__(self, identificacion: str, nombre: str, apellido: str, email: str, rol: str, username: str, id_usuario: int = None, activo: bool = True, db_client=None):
         super().__init__(identificacion, nombre, apellido, email)
         self.__id = id_usuario
         self.__username = username
         self.__rol = rol
         self.__activo = activo
+        self.db = db_client
 
     def obtener_tipo(self) -> str:
         return self.__rol
@@ -48,7 +49,7 @@ class Usuario(Persona):
 
     def guardar(self, contrasena_plana: str):
         """Persiste el nuevo usuario en Supabase con su contraseña cifrada."""
-        client = SupabaseConnection.get_client()
+        client = self.db if self.db is not None else SupabaseConnection.get_client()
         data = {
             "identificacion": self._identificacion,
             "nombre": self._nombre,

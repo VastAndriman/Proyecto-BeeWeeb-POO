@@ -4,7 +4,7 @@ from controladores.horario_controller import HorarioController
 class HorarioView(ctk.CTkFrame):
     def __init__(self, master, horario_controller=None):
         super().__init__(master, fg_color="transparent")
-        self.horario_controller = horario_controller or HorarioController()
+        self.horario_controller = horario_controller if horario_controller is not None else HorarioController()
         
         # Mapeos internos de etiquetas legibles a IDs
         self.docentes_map = {}

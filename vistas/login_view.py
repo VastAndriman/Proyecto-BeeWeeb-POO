@@ -9,7 +9,7 @@ class LoginView(ctk.CTkFrame):
     def __init__(self, master, on_login_success, auth_controller=None):
         super().__init__(master, fg_color="#f3f0fb")
         self.on_login_success = on_login_success
-        self.auth_controller = auth_controller or AuthController()
+        self.auth_controller = auth_controller if auth_controller is not None else AuthController()
         self.modo_actual = "login"
 
         self.grid_rowconfigure(0, weight=1)

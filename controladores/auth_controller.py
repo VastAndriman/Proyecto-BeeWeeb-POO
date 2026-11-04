@@ -10,7 +10,7 @@ class AuthController:
         Inyección de Dependencias: Permite recibir un cliente de base de datos (Supabase o Mock).
         Si no se provee, utiliza SupabaseConnection.get_client() por defecto.
         """
-        self.db = db_client or SupabaseConnection.get_client()
+        self.db = db_client if db_client is not None else SupabaseConnection.get_client()
         self.usuario_actual: Usuario | None = None
 
     @classmethod
@@ -84,7 +84,8 @@ class AuthController:
                 rol=user_record.get("rol", "Docente"),
                 username=user_record.get("username", usuario_limpio),
                 id_usuario=user_record.get("id"),
-                activo=user_record.get("activo", True)
+                activo=user_record.get("activo", True),
+                db_client=self.db
             )
 
             self.usuario_actual = usuario_logueado
@@ -147,7 +148,8 @@ class AuthController:
                 email=email_limpio,
                 rol=rol,
                 username=username_limpio,
-                activo=True
+                activo=True,
+                db_client=self.db
             )
             nuevo_usuario.guardar(contrasena_limpia)
             return True, "¡Cuenta creada con éxito! Ya puedes iniciar sesión."

@@ -1,9 +1,10 @@
 import customtkinter as ctk
-from conexion.supabase_client import supabase
+from conexion.supabase_client import SupabaseConnection
 
 class AulasView(ctk.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, db_client=None):
         super().__init__(master)
+        self.db = db_client if db_client is not None else SupabaseConnection.get_client()
         
         self.titulo = ctk.CTkLabel(self, text="Listado de Aulas Registradas en la Nube", font=("Arial", 18, "bold"))
         self.titulo.pack(pady=15)
@@ -21,8 +22,7 @@ class AulasView(ctk.CTkFrame):
     def cargar_aulas(self):
         self.textbox.delete("0.0", "end")
         try:
-            # Petición directa a Supabase usando el cliente centralizado
-            response = supabase.table("aulas").select("*").execute()
+            response = self.db.table("aulas").select("*").execute()
             data = response.data
             
             if not data:

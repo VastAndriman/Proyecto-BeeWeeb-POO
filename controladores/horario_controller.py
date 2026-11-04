@@ -10,7 +10,7 @@ class HorarioController:
         Inyección de Dependencias: Permite inyectar cualquier cliente de base de datos
         (por ejemplo, mock para pruebas o cliente real de Supabase).
         """
-        self.db = db_client or SupabaseConnection.get_client()
+        self.db = db_client if db_client is not None else SupabaseConnection.get_client()
 
     @classmethod
     def _get_instancia_defecto(cls):

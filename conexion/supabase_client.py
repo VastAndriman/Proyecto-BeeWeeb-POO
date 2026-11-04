@@ -17,4 +17,3 @@ class SupabaseConnection:
                 raise ValueError("Faltan las credenciales de Supabase en el archivo .env")
             cls._instance = create_client(SUPABASE_URL, SUPABASE_KEY)
         return cls._instance
-supabase = SupabaseConnection.get_client()

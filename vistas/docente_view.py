@@ -2,8 +2,9 @@ import customtkinter as ctk
 from conexion.supabase_client import SupabaseConnection
 
 class DocenteView(ctk.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, db_client=None):
         super().__init__(master, fg_color="transparent")
+        self.db = db_client if db_client is not None else SupabaseConnection.get_client()
         
         # Header / Título de la vista
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -74,7 +75,7 @@ class DocenteView(ctk.CTkFrame):
             return
             
         try:
-            client = SupabaseConnection.get_client()
+            client = self.db
             data = {
                 "identificacion": identificacion,
                 "nombre": nombre,
@@ -101,7 +102,7 @@ class DocenteView(ctk.CTkFrame):
     def cargar_docentes(self):
         self.textbox.delete("0.0", "end")
         try:
-            client = SupabaseConnection.get_client()
+            client = self.db
             res = client.table("docentes").select("*").execute()
             data = res.data if res.data else []
             
