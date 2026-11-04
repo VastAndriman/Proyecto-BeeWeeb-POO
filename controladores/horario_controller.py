@@ -100,14 +100,18 @@ class HorarioController:
         if inicio >= fin:
             return False, "La hora de fin debe ser posterior a la hora de inicio."
 
-        try:
-            cantidad_estudiantes = int(num_estudiantes)
-        except (TypeError, ValueError):
-            return False, "Ingresa una cantidad válida de estudiantes."
-        if cantidad_estudiantes <= 0:
-            return False, "La cantidad de estudiantes debe ser mayor a cero."
-
         client = inst.db
+
+        # La matrícula del curso se obtiene de la base, no del formulario.
+        curso_res = client.table("cursos").select("num_estudiantes").eq("id", curso_id).execute()
+        if not curso_res.data:
+            return False, "El curso seleccionado no existe. Actualiza la lista de cursos."
+        try:
+            cantidad_estudiantes = int(curso_res.data[0].get("num_estudiantes"))
+        except (TypeError, ValueError):
+            return False, "El curso no tiene una cantidad válida de estudiantes."
+        if cantidad_estudiantes <= 0:
+            return False, "El curso debe tener al menos un estudiante."
         
         # 1. Validación de Aforo: Capacidad(idAula) >= NumEstudiantes(idCurso)
         aula_res = client.table("aulas").select("capacidad").eq("id", aula_id).execute()

@@ -96,10 +96,10 @@ class HorarioView(ctk.CTkFrame):
         ctk.CTkLabel(self.col_left, text="👥 Estudiantes en el Curso (Aforo):", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
         self.entry_estudiantes = ctk.CTkEntry(
             self.col_left,
-            placeholder_text="Ej. 30",
-            height=34
+            placeholder_text="Selecciona un curso",
+            height=34,
+            state="readonly"
         )
-        self.entry_estudiantes.insert(0, "30")
         self.entry_estudiantes.pack(fill="x", pady=(0, 5))
 
         # Indicador de aforo
@@ -148,7 +148,8 @@ class HorarioView(ctk.CTkFrame):
         self.combo_curso = ctk.CTkComboBox(
             self.col_right,
             values=["Cargando cursos..."],
-            height=34
+            height=34,
+            command=self.al_seleccionar_curso
         )
         self.combo_curso.pack(fill="x", pady=(0, 12))
 
@@ -207,6 +208,15 @@ class HorarioView(ctk.CTkFrame):
                 text_color="#94a3b8"
             )
 
+    def al_seleccionar_curso(self, seleccion):
+        """Muestra la matrícula guardada del curso sin permitir cambiarla aquí."""
+        info = self.cursos_map.get(seleccion, {})
+        self.entry_estudiantes.configure(state="normal")
+        self.entry_estudiantes.delete(0, "end")
+        if info.get("num_estudiantes") is not None:
+            self.entry_estudiantes.insert(0, str(info["num_estudiantes"]))
+        self.entry_estudiantes.configure(state="readonly")
+
     def cargar_datos_dinamicos(self):
         """Carga aulas, docentes, materias y cursos en los selectores desplegables"""
         self.lbl_mensaje.configure(text="Sincronizando listas con Supabase...", text_color="#38bdf8")
@@ -263,13 +273,17 @@ class HorarioView(ctk.CTkFrame):
         cursos_vals = []
         for c in cursos:
             label = f"{c.get('nombre', 'Curso')} [ID: {c.get('id')}]"
-            self.cursos_map[label] = c.get('id')
+            self.cursos_map[label] = {
+                "id": c.get('id'), "num_estudiantes": c.get('num_estudiantes')
+            }
             cursos_vals.append(label)
         self.combo_curso.configure(values=cursos_vals or ["Sin cursos registrados"])
         if cursos_vals:
             self.combo_curso.set(cursos_vals[0])
+            self.al_seleccionar_curso(cursos_vals[0])
         else:
             self.combo_curso.set("Sin cursos registrados")
+            self.al_seleccionar_curso("")
 
         # 5. Cargar Horarios Registrados en el historial
         self.refrescar_historial_horarios()
@@ -344,15 +358,6 @@ class HorarioView(ctk.CTkFrame):
             self.lbl_mensaje.configure(text="⚠️ Por favor completa todos los campos del horario.", text_color="orange")
             return
 
-        try:
-            num_estudiantes = int(str_estudiantes)
-            if num_estudiantes <= 0:
-                self.lbl_mensaje.configure(text="⚠️ El número de estudiantes debe ser mayor a 0.", text_color="orange")
-                return
-        except ValueError:
-            self.lbl_mensaje.configure(text="⚠️ La cantidad de estudiantes debe ser un número entero.", text_color="orange")
-            return
-
         docente_id = self._resolver_id(sel_docente, self.docentes_map)
         aula_id = self._resolver_id(sel_aula, self.aulas_map)
         materia_id = self._resolver_id(sel_materia, self.materias_map)
@@ -380,8 +385,7 @@ class HorarioView(ctk.CTkFrame):
                 materia_id=int(materia_id),
                 docente_id=int(docente_id),
                 aula_id=int(aula_id),
-                curso_id=int(curso_id),
-                num_estudiantes=num_estudiantes
+                curso_id=int(curso_id)
             )
 
             if exito:
