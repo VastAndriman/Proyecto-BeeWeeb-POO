@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from datetime import time
 from controladores.horario_controller import HorarioController
 
 class CalendarioView(ctk.CTkFrame):
@@ -49,6 +50,19 @@ class CalendarioView(ctk.CTkFrame):
             "Sabado": "Sábado"
         }
         return mapeo.get(d, d)
+
+    @staticmethod
+    def fila_para_hora(hora_inicio, bloques):
+        """Ubica una clase en el bloque que comienza o contiene su hora de inicio."""
+        try:
+            hora = time.fromisoformat(str(hora_inicio).strip())
+        except (TypeError, ValueError):
+            return None
+        for fila, bloque in enumerate(bloques, start=1):
+            inicio, fin = (time.fromisoformat(parte.strip()) for parte in bloque.split("-"))
+            if inicio <= hora < fin:
+                return fila
+        return None
 
     def construir_encabezados(self):
         # Esquina superior izquierda vacía (Hora/Día)
@@ -104,13 +118,9 @@ class CalendarioView(ctk.CTkFrame):
                 
                 if dia_str in self.dias:
                     col_idx = self.dias.index(dia_str) + 1
-                    # Buscar la fila adecuada según la hora de inicio
-                    row_idx = 1
-                    for idx, b in enumerate(self.bloques, start=1):
-                        b_ini = b.split("-")[0].strip()
-                        if hora_ini == b_ini or hora_ini in b:
-                            row_idx = idx
-                            break
+                    row_idx = self.fila_para_hora(hora_ini, self.bloques)
+                    if row_idx is None:
+                        continue
                     
                     # Colocar tarjeta de la materia en la celda
                     card_materia = ctk.CTkFrame(self.grid_container, fg_color="#e8e1fb", corner_radius=8, border_width=1, border_color="#c7b8e9")
