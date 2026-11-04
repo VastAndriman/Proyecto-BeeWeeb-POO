@@ -316,86 +316,115 @@ class LoginView(ctk.CTkFrame):
 
     def _construir_formulario_registro(self, parent):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
-        frame.pack(fill="both", expand=True, padx=15, pady=6)
+        frame.pack(fill="both", expand=True, padx=15, pady=(10, 2))
 
         ctk.CTkLabel(
             frame,
-            text="REGISTRO DE USUARIO",
-            font=("Arial", 18, "bold"),
-            text_color="#0284c7"
-        ).pack(pady=(4, 2))
+            text="Crear cuenta",
+            font=("Arial", 23, "bold"),
+            text_color="#0b497a"
+        ).pack(anchor="w", padx=25, pady=(0, 4))
 
         ctk.CTkLabel(
             frame,
-            text="Completa los datos para registrarte en el sistema",
-            font=("Arial", 11),
-            text_color="#64748b"
-        ).pack(pady=(0, 10))
+            text="Completa tus datos para usar BeeWeek.",
+            font=("Arial", 12),
+            text_color="#607387"
+        ).pack(anchor="w", padx=25, pady=(0, 8))
 
         self.reg_cedula = self._crear_campo(
-            frame, "Cédula / Identificación", "🆔"
+            frame, "Cédula / Identificación", "10 dígitos"
         )
 
         fila_nombres = ctk.CTkFrame(frame, fg_color="transparent")
-        fila_nombres.pack(fill="x", padx=25, pady=(0, 4))
+        fila_nombres.pack(fill="x", padx=25, pady=(0, 6))
         fila_nombres.grid_columnconfigure(0, weight=1)
         fila_nombres.grid_columnconfigure(1, weight=1)
 
+        ctk.CTkLabel(
+            fila_nombres, text="Nombre", font=("Arial", 12),
+            text_color="#43576b"
+        ).grid(row=0, column=0, padx=(0, 5), sticky="w")
+        ctk.CTkLabel(
+            fila_nombres, text="Apellido", font=("Arial", 12),
+            text_color="#43576b"
+        ).grid(row=0, column=1, padx=(5, 0), sticky="w")
+
         self.reg_nombre = ctk.CTkEntry(
             fila_nombres, placeholder_text="Nombre",
-            height=30, font=("Arial", 12)
+            height=34, font=("Arial", 12), fg_color="#ffffff",
+            text_color="#0f172a", border_color="#b9c9d7",
+            border_width=1, corner_radius=9
         )
         self.reg_nombre.grid(
-            row=0, column=0, padx=(0, 4), sticky="ew"
+            row=1, column=0, padx=(0, 5), sticky="ew"
         )
 
         self.reg_apellido = ctk.CTkEntry(
             fila_nombres, placeholder_text="Apellido",
-            height=30, font=("Arial", 12)
+            height=34, font=("Arial", 12), fg_color="#ffffff",
+            text_color="#0f172a", border_color="#b9c9d7",
+            border_width=1, corner_radius=9
         )
         self.reg_apellido.grid(
-            row=0, column=1, padx=(4, 0), sticky="ew"
+            row=1, column=1, padx=(5, 0), sticky="ew"
         )
 
         self.reg_email = self._crear_campo(
-            frame, "Correo (@uleam.edu.ec)", "✉️"
+            frame, "Correo institucional", "nombre@uleam.edu.ec"
         )
 
         fila_cred = ctk.CTkFrame(frame, fg_color="transparent")
-        fila_cred.pack(fill="x", padx=25, pady=(0, 4))
+        fila_cred.pack(fill="x", padx=25, pady=(0, 6))
         fila_cred.grid_columnconfigure(0, weight=1)
         fila_cred.grid_columnconfigure(1, weight=1)
 
+        ctk.CTkLabel(
+            fila_cred, text="Usuario", font=("Arial", 12),
+            text_color="#43576b"
+        ).grid(row=0, column=0, padx=(0, 5), sticky="w")
+        ctk.CTkLabel(
+            fila_cred, text="Contraseña", font=("Arial", 12),
+            text_color="#43576b"
+        ).grid(row=0, column=1, padx=(5, 0), sticky="w")
+
         self.reg_user = ctk.CTkEntry(
             fila_cred, placeholder_text="Usuario",
-            height=30, font=("Arial", 12)
+            height=34, font=("Arial", 12), fg_color="#ffffff",
+            text_color="#0f172a", border_color="#b9c9d7",
+            border_width=1, corner_radius=9
         )
         self.reg_user.grid(
-            row=0, column=0, padx=(0, 4), sticky="ew"
+            row=1, column=0, padx=(0, 5), sticky="ew"
         )
 
         self.reg_pass = ctk.CTkEntry(
             fila_cred, placeholder_text="Contraseña",
-            show="*", height=30, font=("Arial", 12)
+            show="*", height=34, font=("Arial", 12),
+            fg_color="#ffffff", text_color="#0f172a",
+            border_color="#b9c9d7", border_width=1, corner_radius=9
         )
         self.reg_pass.grid(
-            row=0, column=1, padx=(4, 0), sticky="ew"
+            row=1, column=1, padx=(5, 0), sticky="ew"
         )
 
         rol_box = ctk.CTkFrame(frame, fg_color="transparent")
-        rol_box.pack(fill="x", padx=25, pady=(4, 8))
+        rol_box.pack(fill="x", padx=25, pady=(0, 8))
 
         ctk.CTkLabel(
             rol_box, text="Rol:",
             font=("Arial", 11, "bold"),
-            text_color="#0284c7"
+            text_color="#43576b"
         ).pack(side="left", padx=(0, 8))
 
         self.reg_rol = ctk.CTkSegmentedButton(
             rol_box,
             values=["Docente", "Estudiante", "Administrador"],
-            selected_color="#0284c7",
-            selected_hover_color="#0369a1",
+            selected_color="#bae6fd",
+            selected_hover_color="#7dd3fc",
+            unselected_color="#eaf4f8",
+            unselected_hover_color="#d7eaf5",
+            text_color="#0b497a",
             font=("Arial", 11)
         )
         self.reg_rol.set("Docente")
@@ -403,16 +432,16 @@ class LoginView(ctk.CTkFrame):
 
         self.btn_registrar = ctk.CTkButton(
             frame,
-            text="REGISTRARSE",
-            height=34,
+            text="Crear cuenta",
+            height=40,
             font=("Arial", 13, "bold"),
             fg_color="#0284c7",
             hover_color="#0369a1",
             text_color="#ffffff",
-            corner_radius=17,
+            corner_radius=9,
             command=self._ejecutar_registro
         )
-        self.btn_registrar.pack(fill="x", padx=25, pady=(4, 6))
+        self.btn_registrar.pack(fill="x", padx=25, pady=(0, 6))
 
         login_box = ctk.CTkFrame(frame, fg_color="transparent")
         login_box.pack(fill="x", padx=25, pady=(2, 4))
@@ -446,29 +475,24 @@ class LoginView(ctk.CTkFrame):
         self.reg_cedula.focus()
 
     def _crear_campo(self, parent, placeholder: str, icono: str):
-        box = ctk.CTkFrame(parent, fg_color="transparent")
-        box.pack(fill="x", padx=25, pady=(0, 2))
-
         ctk.CTkLabel(
-            box, text=icono,
-            font=("Arial", 13), text_color="#0284c7"
-        ).pack(side="left", padx=(0, 6))
+            parent, text=placeholder,
+            font=("Arial", 12), text_color="#43576b"
+        ).pack(anchor="w", padx=25, pady=(0, 5))
 
         entry = ctk.CTkEntry(
-            box,
-            placeholder_text=placeholder,
-            height=30,
+            parent,
+            placeholder_text=icono,
+            height=34,
             font=("Arial", 12),
-            fg_color="transparent",
-            border_width=0,
+            fg_color="#ffffff",
+            border_width=1,
+            border_color="#b9c9d7",
+            corner_radius=9,
             text_color="#0f172a",
             placeholder_text_color="#94a3b8"
         )
-        entry.pack(side="left", fill="x", expand=True)
-
-        ctk.CTkFrame(
-            parent, height=1, fg_color="#cbd5e1"
-        ).pack(fill="x", padx=25, pady=(0, 8))
+        entry.pack(fill="x", padx=25, pady=(0, 6))
 
         return entry
 
@@ -628,7 +652,7 @@ class LoginView(ctk.CTkFrame):
             )
         finally:
             self.btn_registrar.configure(
-                state="normal", text="REGISTRARSE"
+                state="normal", text="Crear cuenta"
             )
 
     def _ir_a_login_con_datos(self, username: str):
