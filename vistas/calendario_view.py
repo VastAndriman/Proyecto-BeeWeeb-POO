@@ -17,6 +17,9 @@ class CalendarioView(ctk.CTkFrame):
         btn_refresh = ctk.CTkButton(self.header_frame, text="🔄 Sincronizar Calendario", command=self.cargar_horarios, fg_color="#7256ac", hover_color="#5e4497", width=160)
         btn_refresh.pack(side="right")
 
+        self.lbl_estado = ctk.CTkLabel(self, text="", text_color="#b42318", anchor="w")
+        self.lbl_estado.pack(fill="x", padx=30)
+
         # Contenedor Principal de la Grilla Semanal
         self.grid_container = ctk.CTkScrollableFrame(self, corner_radius=10, fg_color="#ffffff")
         self.grid_container.pack(fill="both", expand=True, padx=30, pady=10)
@@ -76,6 +79,7 @@ class CalendarioView(ctk.CTkFrame):
             self.grid_container.grid_columnconfigure(col_idx, weight=1)
 
     def cargar_horarios(self):
+        self.lbl_estado.configure(text="")
         # Limpiar celdas previas de datos
         for widget in self.grid_container.winfo_children():
             info = widget.grid_info()
@@ -144,5 +148,7 @@ class CalendarioView(ctk.CTkFrame):
                         wraplength=140
                     )
                     lbl_m.pack(expand=True, fill="both", padx=6, pady=6)
-        except Exception as e:
-            print(f"Error al sincronizar calendario: {e}")
+        except Exception:
+            self.lbl_estado.configure(
+                text="No se pudo cargar el calendario. Revisa tu conexión y vuelve a sincronizar."
+            )
