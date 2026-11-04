@@ -13,11 +13,11 @@ class CalendarioView(ctk.CTkFrame):
         self.lbl_titulo = ctk.CTkLabel(self.header_frame, text="📅 Horarios - Vista Semanal", font=("Arial", 22, "bold"))
         self.lbl_titulo.pack(side="left")
         
-        btn_refresh = ctk.CTkButton(self.header_frame, text="🔄 Sincronizar Calendario", command=self.cargar_horarios, fg_color="#334155", hover_color="#475569", width=160)
+        btn_refresh = ctk.CTkButton(self.header_frame, text="🔄 Sincronizar Calendario", command=self.cargar_horarios, fg_color="#7256ac", hover_color="#5e4497", width=160)
         btn_refresh.pack(side="right")
 
         # Contenedor Principal de la Grilla Semanal
-        self.grid_container = ctk.CTkScrollableFrame(self, corner_radius=10, fg_color=("#ffffff", "#1e293b"))
+        self.grid_container = ctk.CTkScrollableFrame(self, corner_radius=10, fg_color="#ffffff")
         self.grid_container.pack(fill="both", expand=True, padx=30, pady=10)
 
         self.dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
@@ -57,7 +57,7 @@ class CalendarioView(ctk.CTkFrame):
         
         # Encabezados de Días de la Semana
         for col_idx, dia in enumerate(self.dias, start=1):
-            lbl_dia = ctk.CTkLabel(self.grid_container, text=dia, font=("Arial", 13, "bold"), fg_color="#0f172a", text_color="#38bdf8", corner_radius=6, height=35)
+            lbl_dia = ctk.CTkLabel(self.grid_container, text=dia, font=("Arial", 13, "bold"), fg_color="#e8e1fb", text_color="#4b3f76", corner_radius=6, height=35)
             lbl_dia.grid(row=0, column=col_idx, padx=4, pady=5, sticky="nsew")
             self.grid_container.grid_columnconfigure(col_idx, weight=1)
 
@@ -71,11 +71,11 @@ class CalendarioView(ctk.CTkFrame):
         # Dibuja la grilla base de horas
         total_cols = len(self.dias)
         for row_idx, hora in enumerate(self.bloques, start=1):
-            lbl_hora = ctk.CTkLabel(self.grid_container, text=hora, font=("Arial", 11, "bold"), text_color="#94a3b8", width=110)
+            lbl_hora = ctk.CTkLabel(self.grid_container, text=hora, font=("Arial", 11, "bold"), text_color="#786f95", width=110)
             lbl_hora.grid(row=row_idx, column=0, padx=5, pady=4, sticky="nsew")
             
             for col_idx in range(1, total_cols + 1):
-                cell_frame = ctk.CTkFrame(self.grid_container, corner_radius=6, border_width=1, border_color="#334155", fg_color="transparent", height=70)
+                cell_frame = ctk.CTkFrame(self.grid_container, corner_radius=6, border_width=1, border_color="#d2cbe8", fg_color="transparent", height=70)
                 cell_frame.grid(row=row_idx, column=col_idx, padx=3, pady=3, sticky="nsew")
 
         # Consultar la base de datos para mapear las clases guardadas
@@ -113,7 +113,7 @@ class CalendarioView(ctk.CTkFrame):
                             break
                     
                     # Colocar tarjeta de la materia en la celda
-                    card_materia = ctk.CTkFrame(self.grid_container, fg_color="#1e3a8a", corner_radius=8, border_width=1, border_color="#3b82f6")
+                    card_materia = ctk.CTkFrame(self.grid_container, fg_color="#e8e1fb", corner_radius=8, border_width=1, border_color="#c7b8e9")
                     card_materia.grid(row=row_idx, column=col_idx, padx=3, pady=3, sticky="nsew")
                     
                     texto_tarjeta = f"📘 {materia_nom}"
@@ -129,7 +129,7 @@ class CalendarioView(ctk.CTkFrame):
                         card_materia, 
                         text=texto_tarjeta, 
                         font=("Arial", 10, "bold"), 
-                        text_color="#93c5fd", 
+                        text_color="#7256ac",
                         justify="center",
                         wraplength=140
                     )

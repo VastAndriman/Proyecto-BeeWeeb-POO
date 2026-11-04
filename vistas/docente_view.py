@@ -13,7 +13,7 @@ class DocenteView(ctk.CTkFrame):
         self.titulo = ctk.CTkLabel(self.header_frame, text="👨‍🏫 Gestión de Docentes", font=("Arial", 22, "bold"))
         self.titulo.pack(side="left")
         
-        btn_refrescar = ctk.CTkButton(self.header_frame, text="🔄 Sincronizar Lista", command=self.cargar_docentes, fg_color="#334155", width=150)
+        btn_refrescar = ctk.CTkButton(self.header_frame, text="🔄 Sincronizar Lista", command=self.cargar_docentes, fg_color="#7256ac", width=150)
         btn_refrescar.pack(side="right")
 
         # Contenedor principal de dos columnas
@@ -44,7 +44,7 @@ class DocenteView(ctk.CTkFrame):
         self.entry_especialidad.pack(pady=8, padx=20)
         
         # Botón para guardar
-        self.btn_guardar = ctk.CTkButton(self.form_frame, text="💾 Guardar en Supabase", command=self.guardar_docente, fg_color="#2563eb", width=260)
+        self.btn_guardar = ctk.CTkButton(self.form_frame, text="💾 Guardar en Supabase", command=self.guardar_docente, fg_color="#7256ac", width=260)
         self.btn_guardar.pack(pady=15, padx=20)
         
         # Etiqueta de mensajes
@@ -84,7 +84,7 @@ class DocenteView(ctk.CTkFrame):
                 "especialidad": especialidad
             }
             client.table("docentes").insert(data).execute()
-            self.lbl_mensaje.configure(text="¡Docente guardado con éxito!", text_color="#34d399")
+            self.lbl_mensaje.configure(text="¡Docente guardado con éxito!", text_color="#15803d")
             
             # Limpiar campos
             self.entry_identificacion.delete(0, 'end')
@@ -97,7 +97,7 @@ class DocenteView(ctk.CTkFrame):
             self.cargar_docentes()
             
         except Exception as e:
-            self.lbl_mensaje.configure(text=f"Error al guardar: {e}", text_color="#ef4444")
+            self.lbl_mensaje.configure(text=f"Error al guardar: {e}", text_color="#b42333")
 
     def cargar_docentes(self):
         self.textbox.delete("0.0", "end")

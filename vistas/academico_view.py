@@ -94,7 +94,7 @@ class AcademicoView(ctk.CTkFrame):
         ok, mensaje = self.controller.crear_materia(
             self.materia_nombre.get(), self.materia_creditos.get(), self.materia_semestre.get()
         )
-        self.materia_mensaje.configure(text=mensaje, text_color="#34d399" if ok else "#f87171")
+        self.materia_mensaje.configure(text=mensaje, text_color="#15803d" if ok else "#b42333")
         if ok:
             for campo in (self.materia_nombre, self.materia_creditos, self.materia_semestre):
                 campo.delete(0, "end")
@@ -104,7 +104,7 @@ class AcademicoView(ctk.CTkFrame):
         ok, mensaje = self.controller.crear_curso(
             self.curso_paralelo.get(), self.curso_estudiantes.get()
         )
-        self.curso_mensaje.configure(text=mensaje, text_color="#34d399" if ok else "#f87171")
+        self.curso_mensaje.configure(text=mensaje, text_color="#15803d" if ok else "#b42333")
         if ok:
             for campo in (self.curso_paralelo, self.curso_estudiantes):
                 campo.delete(0, "end")

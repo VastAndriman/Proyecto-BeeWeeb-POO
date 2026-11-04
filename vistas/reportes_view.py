@@ -23,7 +23,7 @@ class ReportesView(ctk.CTkFrame):
         self.combo_tipo = ctk.CTkOptionMenu(self.filter_frame, values=["Horarios Registrados", "Aulas y Aforo"])
         self.combo_tipo.pack(side="left", padx=20, pady=(0, 20))
 
-        btn_generar = ctk.CTkButton(self.filter_frame, text="📄 Generar Vistas de Reporte", command=self.generar_reporte, fg_color="#2563eb")
+        btn_generar = ctk.CTkButton(self.filter_frame, text="📄 Generar Vistas de Reporte", command=self.generar_reporte, fg_color="#7256ac")
         btn_generar.pack(side="left", padx=10, pady=(0, 20))
 
         # Consola de Previsualización del Reporte

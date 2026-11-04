@@ -33,8 +33,8 @@ class HorarioView(ctk.CTkFrame):
             self.header_frame,
             text="🔄 Actualizar Opciones",
             width=160,
-            fg_color="#334155",
-            hover_color="#475569",
+            fg_color="#7256ac",
+            hover_color="#5e4497",
             command=self.cargar_datos_dinamicos
         )
         self.btn_recargar.pack(side="right")
@@ -50,7 +50,7 @@ class HorarioView(ctk.CTkFrame):
         # ==========================================
         # 2. TARJETA PRINCIPAL DEL FORMULARIO
         # ==========================================
-        self.form_card = ctk.CTkFrame(self.scroll_container, corner_radius=12, fg_color=("#ffffff", "#1e293b"))
+        self.form_card = ctk.CTkFrame(self.scroll_container, corner_radius=12, fg_color="#ffffff")
         self.form_card.pack(fill="x", pady=(0, 15), padx=5)
 
         # Configuración de 2 columnas proporcionales
@@ -107,7 +107,7 @@ class HorarioView(ctk.CTkFrame):
             self.col_left,
             text="ℹ️ Capacidad estimada: Pendiente de seleccionar aula",
             font=("Arial", 11),
-            text_color="#94a3b8"
+            text_color="#786f95"
         )
         self.lbl_info_aforo.pack(anchor="w")
 
@@ -161,8 +161,8 @@ class HorarioView(ctk.CTkFrame):
             self.action_frame, 
             text="✨ Validar y Registrar Horario", 
             font=("Arial", 14, "bold"),
-            fg_color="#2563eb",
-            hover_color="#1d4ed8",
+            fg_color="#7256ac",
+            hover_color="#5e4497",
             height=42,
             command=self.crear_horario
         )
@@ -174,7 +174,7 @@ class HorarioView(ctk.CTkFrame):
         # ==========================================
         # 3. LISTADO DE HORARIOS EXISTENTES
         # ==========================================
-        self.tabla_frame = ctk.CTkFrame(self.scroll_container, corner_radius=12, fg_color=("#ffffff", "#1e293b"))
+        self.tabla_frame = ctk.CTkFrame(self.scroll_container, corner_radius=12, fg_color="#ffffff")
         self.tabla_frame.pack(fill="both", expand=True, pady=(5, 20), padx=5)
 
         ctk.CTkLabel(
@@ -200,12 +200,12 @@ class HorarioView(ctk.CTkFrame):
             cap = aula_info["capacidad"]
             self.lbl_info_aforo.configure(
                 text=f"✅ Capacidad máxima del aula: {cap} estudiantes",
-                text_color="#34d399"
+                text_color="#15803d"
             )
         else:
             self.lbl_info_aforo.configure(
                 text="ℹ️ Selecciona un aula registrada para conocer su capacidad",
-                text_color="#94a3b8"
+                text_color="#786f95"
             )
 
     def al_seleccionar_curso(self, seleccion):
@@ -219,7 +219,7 @@ class HorarioView(ctk.CTkFrame):
 
     def cargar_datos_dinamicos(self):
         """Carga aulas, docentes, materias y cursos en los selectores desplegables"""
-        self.lbl_mensaje.configure(text="Sincronizando listas con Supabase...", text_color="#38bdf8")
+        self.lbl_mensaje.configure(text="Sincronizando listas con Supabase...", text_color="#7256ac")
 
         # 1. Cargar Docentes
         docentes = self.horario_controller.obtener_docentes()
@@ -298,7 +298,7 @@ class HorarioView(ctk.CTkFrame):
                 text_color="orange"
             )
         else:
-            self.lbl_mensaje.configure(text="✅ Datos sincronizados correctamente.", text_color="#34d399")
+            self.lbl_mensaje.configure(text="✅ Datos sincronizados correctamente.", text_color="#15803d")
 
     def refrescar_historial_horarios(self):
         """Muestra los horarios ya registrados en la base de datos con nombres legibles"""
@@ -389,9 +389,9 @@ class HorarioView(ctk.CTkFrame):
             )
 
             if exito:
-                self.lbl_mensaje.configure(text=f"✅ {mensaje}", text_color="#34d399")
+                self.lbl_mensaje.configure(text=f"✅ {mensaje}", text_color="#15803d")
                 self.refrescar_historial_horarios()
             else:
-                self.lbl_mensaje.configure(text=f"❌ {mensaje}", text_color="#f87171")
+                self.lbl_mensaje.configure(text=f"❌ {mensaje}", text_color="#b42333")
         except Exception as e:
-            self.lbl_mensaje.configure(text=f"❌ Error al procesar el horario: {e}", text_color="#f87171")
+            self.lbl_mensaje.configure(text=f"❌ Error al procesar el horario: {e}", text_color="#b42333")
