@@ -1,3 +1,5 @@
+from datetime import time
+
 from conexion.supabase_client import SupabaseConnection
 
 class HorarioController:
@@ -24,6 +26,11 @@ class HorarioController:
         if len(parts) >= 2:
             return f"{parts[0].zfill(2)}:{parts[1].zfill(2)}"
         return str(h_str).strip()
+
+    @staticmethod
+    def convertir_hora(valor):
+        """Acepta horas HH:MM y HH:MM:SS, como las devuelve Supabase."""
+        return time.fromisoformat(str(valor).strip())
 
     def obtener_aulas(self_or_cls=None):
         inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
@@ -101,6 +108,14 @@ class HorarioController:
         curso_id = curso_id if curso_id is not None else kwargs.get("curso_id")
         num_estudiantes = num_estudiantes if num_estudiantes is not None else kwargs.get("num_estudiantes")
 
+        try:
+            inicio = HorarioController.convertir_hora(hora_inicio)
+            fin = HorarioController.convertir_hora(hora_fin)
+        except (TypeError, ValueError):
+            return False, "Ingresa horas válidas en formato HH:MM."
+        if inicio >= fin:
+            return False, "La hora de fin debe ser posterior a la hora de inicio."
+
         client = inst.db
         
         # 1. Validación de Aforo: Capacidad(idAula) >= NumEstudiantes(idCurso)
@@ -112,18 +127,25 @@ class HorarioController:
 
         # 2. Consultar horarios existentes para validar cruces concurrentes
         horarios_existentes = client.table("horarios").select("*").eq("dia", dia).execute()
-        h_inicio_norm = HorarioController.normalizar_hora(hora_inicio)
-        
         for h in (horarios_existentes.data or []):
-            h_inicio_existente = HorarioController.normalizar_hora(h.get('hora_inicio'))
-            
-            # Validación de Docente: Docente_Disponible == True
-            if str(h.get('docente_id')) == str(docente_id) and h_inicio_existente == h_inicio_norm:
+            try:
+                inicio_existente = HorarioController.convertir_hora(h.get("hora_inicio"))
+                fin_existente = HorarioController.convertir_hora(h.get("hora_fin"))
+            except (TypeError, ValueError):
+                return False, "Hay un horario registrado con horas inválidas. Revísalo antes de continuar."
+
+            # Los extremos contiguos son válidos: 08:00-09:00 y 09:00-10:00.
+            if not (inicio < fin_existente and inicio_existente < fin):
+                continue
+
+            if str(h.get('docente_id')) == str(docente_id):
                 return False, "Conflicto: El docente ya tiene una clase asignada en este bloque horario."
-            
-            # Validación de Aula: Aula_Ocupada == False
-            if str(h.get('aula_id')) == str(aula_id) and h_inicio_existente == h_inicio_norm:
+
+            if str(h.get('aula_id')) == str(aula_id):
                 return False, "Conflicto: El aula ya se encuentra reservada en este bloque horario."
+
+            if str(h.get('curso_id')) == str(curso_id):
+                return False, "Conflicto: El curso ya tiene una clase asignada en este bloque horario."
 
         # 3. Si pasa todas las validaciones, se registra el horario en Supabase
         nuevo_horario = {
