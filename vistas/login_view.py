@@ -96,10 +96,18 @@ class LoginView(ctk.CTkFrame):
         )
 
         self.canvas_origami.create_text(
-            w // 2, 505,
-            text="ULEAM",
-            font=("Arial", 18, "bold"),
-            fill="#0f172a"
+            26, 54, text="BeeWeek", anchor="w",
+            font=("Arial", 23, "bold"), fill="#ffffff"
+        )
+        self.canvas_origami.create_text(
+            26, 380,
+            text="Organiza tu institución\ncon horarios claros\ny sin cruces.",
+            anchor="w", justify="left", font=("Arial", 15),
+            fill="#ffffff"
+        )
+        self.canvas_origami.create_text(
+            26, 505, text="ULEAM · Gestión educativa", anchor="w",
+            font=("Arial", 11, "bold"), fill="#0f172a"
         )
 
         self._redibujar_pestanas()
@@ -188,78 +196,57 @@ class LoginView(ctk.CTkFrame):
 
     def _construir_formulario_login(self, parent):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
-        frame.pack(fill="both", expand=True, padx=15, pady=10)
-
-        canvas_avatar = tk.Canvas(
-            frame, width=64, height=64,
-            bg="#ffffff", highlightthickness=0
-        )
-        canvas_avatar.pack(pady=(4, 2))
-        canvas_avatar.create_oval(
-            4, 4, 60, 60, fill="#0284c7", outline=""
-        )
-        canvas_avatar.create_oval(
-            23, 14, 41, 32, outline="#ffffff", width=3
-        )
-        canvas_avatar.create_arc(
-            14, 34, 50, 66,
-            start=15, extent=150,
-            style="arc", outline="#ffffff", width=3
-        )
+        frame.pack(fill="both", expand=True, padx=15, pady=(65, 10))
 
         ctk.CTkLabel(
             frame,
-            text="INICIAR SESIÓN",
-            font=("Arial", 18, "bold"),
-            text_color="#0284c7"
-        ).pack(pady=(0, 16))
-
-        user_box = ctk.CTkFrame(frame, fg_color="transparent")
-        user_box.pack(fill="x", padx=25, pady=(0, 2))
+            text="Iniciar sesión",
+            font=("Arial", 23, "bold"),
+            text_color="#0b497a"
+        ).pack(anchor="w", padx=25, pady=(0, 4))
         ctk.CTkLabel(
-            user_box, text="👤",
-            font=("Arial", 15), text_color="#0284c7"
-        ).pack(side="left", padx=(0, 8))
+            frame, text="Accede a tu espacio de trabajo.",
+            font=("Arial", 12), text_color="#607387"
+        ).pack(anchor="w", padx=25, pady=(0, 22))
+
+        ctk.CTkLabel(
+            frame, text="Correo o usuario", font=("Arial", 12),
+            text_color="#43576b"
+        ).pack(anchor="w", padx=25, pady=(0, 5))
 
         self.entry_usuario = ctk.CTkEntry(
-            user_box,
-            placeholder_text="Email o Usuario",
-            height=32,
+            frame,
+            placeholder_text="nombre@uleam.edu.ec",
+            height=39,
             font=("Arial", 13),
-            fg_color="transparent",
-            border_width=0,
+            fg_color="#ffffff",
+            border_width=1,
+            border_color="#b9c9d7",
+            corner_radius=9,
             text_color="#0f172a",
             placeholder_text_color="#94a3b8"
         )
-        self.entry_usuario.pack(side="left", fill="x", expand=True)
+        self.entry_usuario.pack(fill="x", padx=25, pady=(0, 14))
 
-        ctk.CTkFrame(
-            frame, height=1, fg_color="#cbd5e1"
-        ).pack(fill="x", padx=25, pady=(0, 12))
-
-        pass_box = ctk.CTkFrame(frame, fg_color="transparent")
-        pass_box.pack(fill="x", padx=25, pady=(0, 2))
         ctk.CTkLabel(
-            pass_box, text="🔒",
-            font=("Arial", 15), text_color="#0284c7"
-        ).pack(side="left", padx=(0, 8))
+            frame, text="Contraseña", font=("Arial", 12),
+            text_color="#43576b"
+        ).pack(anchor="w", padx=25, pady=(0, 5))
 
         self.entry_password = ctk.CTkEntry(
-            pass_box,
-            placeholder_text="Contraseña",
+            frame,
+            placeholder_text="Tu contraseña",
             show="*",
-            height=32,
+            height=39,
             font=("Arial", 13),
-            fg_color="transparent",
-            border_width=0,
+            fg_color="#ffffff",
+            border_width=1,
+            border_color="#b9c9d7",
+            corner_radius=9,
             text_color="#0f172a",
             placeholder_text_color="#94a3b8"
         )
-        self.entry_password.pack(side="left", fill="x", expand=True)
-
-        ctk.CTkFrame(
-            frame, height=1, fg_color="#cbd5e1"
-        ).pack(fill="x", padx=25, pady=(0, 10))
+        self.entry_password.pack(fill="x", padx=25, pady=(0, 12))
 
         self.check_var = ctk.StringVar(value="off")
         ctk.CTkCheckBox(
@@ -275,17 +262,17 @@ class LoginView(ctk.CTkFrame):
             checkbox_height=16,
             fg_color="#0284c7",
             hover_color="#0369a1"
-        ).pack(anchor="w", padx=25, pady=(0, 12))
+        ).pack(anchor="w", padx=25, pady=(0, 18))
 
         self.btn_login = ctk.CTkButton(
             frame,
-            text="INGRESAR",
-            height=36,
+            text="Ingresar",
+            height=40,
             font=("Arial", 13, "bold"),
             fg_color="#0284c7",
             hover_color="#0369a1",
             text_color="#ffffff",
-            corner_radius=18,
+            corner_radius=9,
             command=self._ejecutar_login
         )
         self.btn_login.pack(fill="x", padx=25, pady=(0, 10))
