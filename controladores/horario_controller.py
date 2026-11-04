@@ -156,3 +156,23 @@ class HorarioController:
         
         client.table("horarios").insert(nuevo_horario).execute()
         return True, "¡Horario registrado exitosamente sin cruces!"
+
+    def actualizar_horario(self, horario_id, *, dia, hora_inicio, hora_fin,
+                           materia_id, docente_id, aula_id, curso_id):
+        """Edita un bloque; el trigger de Supabase valida cruces y aforo."""
+        if not isinstance(horario_id, int) or horario_id <= 0:
+            return False, "Selecciona un horario válido."
+        try:
+            horario = (HorarioBuilder().dia(dia).horas(hora_inicio, hora_fin)
+                       .materia(materia_id).docente(docente_id)
+                       .aula(aula_id).curso(curso_id).construir())
+            self.db.table("horarios").update(horario.para_guardar()).eq("id", horario_id).execute()
+            return True, "Horario actualizado."
+        except ValueError as error:
+            return False, str(error)
+
+    def eliminar_horario(self, horario_id):
+        if not isinstance(horario_id, int) or horario_id <= 0:
+            return False, "Selecciona un horario válido."
+        self.db.table("horarios").delete().eq("id", horario_id).execute()
+        return True, "Horario eliminado."

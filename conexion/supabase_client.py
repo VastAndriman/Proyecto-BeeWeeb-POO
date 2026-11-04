@@ -58,6 +58,7 @@ class BeeWeekQuery:
         self.filter_column = None
         self.filter_value = None
         self.payload = None
+        self.operation = "select"
 
     def select(self, columns="*", count=None):
         if columns != "*" and not all(c.strip().isidentifier() for c in columns.split(",")):
@@ -77,16 +78,40 @@ class BeeWeekQuery:
         if not isinstance(payload, dict):
             raise ValueError("El registro debe ser un objeto")
         self.payload = payload
+        self.operation = "insert"
+        return self
+
+    def update(self, payload):
+        if not isinstance(payload, dict) or not payload:
+            raise ValueError("Indica los cambios del registro")
+        self.payload = payload
+        self.operation = "update"
+        return self
+
+    def delete(self):
+        self.operation = "delete"
         return self
 
     def execute(self):
         token = self.db._session_token
         if not token:
             raise PermissionError("Inicia sesion para consultar datos academicos")
-        if self.payload is not None:
+        if self.operation == "insert":
             result = self.db._client.rpc("beeweek_insert", {
                 "p_token": token, "p_table": self.name, "p_data": self.payload,
             }).execute()
+            return SimpleNamespace(data=[result.data], count=None)
+        if self.operation in ("update", "delete"):
+            if self.name not in ("aulas", "horarios") or self.filter_column != "id":
+                raise ValueError("Selecciona un aula u horario por ID")
+            params = {"p_token": token, "p_table": self.name,
+                      "p_id": int(self.filter_value)}
+            if self.operation == "update":
+                params["p_data"] = self.payload
+            result = self.db._client.rpc(
+                "beeweek_update" if self.operation == "update" else "beeweek_delete",
+                params,
+            ).execute()
             return SimpleNamespace(data=[result.data], count=None)
         result = self.db._client.rpc("beeweek_list", {
             "p_token": token, "p_table": self.name,

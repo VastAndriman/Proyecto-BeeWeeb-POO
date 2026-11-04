@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from tkinter import messagebox
 from controladores.horario_controller import HorarioController
 
 class HorarioView(ctk.CTkFrame):
@@ -11,6 +12,7 @@ class HorarioView(ctk.CTkFrame):
         self.aulas_map = {}
         self.materias_map = {}
         self.cursos_map = {}
+        self.horarios_map = {}
 
         # Contenedor desplazable principal
         self.scroll_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
@@ -167,6 +169,21 @@ class HorarioView(ctk.CTkFrame):
             command=self.crear_horario
         )
         self.btn_crear.pack(fill="x", pady=(5, 5))
+
+        self.combo_horario = ctk.CTkOptionMenu(
+            self.action_frame,
+            values=["Selecciona un horario para editar o eliminar"],
+            command=self.seleccionar_horario,
+            fg_color="#7256ac",
+        )
+        self.combo_horario.pack(fill="x", pady=(12, 5))
+        self.combo_horario.set("Selecciona un horario para editar o eliminar")
+        botones_edicion = ctk.CTkFrame(self.action_frame, fg_color="transparent")
+        botones_edicion.pack(fill="x", pady=(0, 5))
+        ctk.CTkButton(botones_edicion, text="Guardar cambios", command=self.actualizar_horario,
+                      fg_color="#7256ac").pack(side="left", padx=(0, 8))
+        ctk.CTkButton(botones_edicion, text="Eliminar horario", command=self.eliminar_horario,
+                      fg_color="#b42333", hover_color="#8b1c2a").pack(side="left")
         
         self.lbl_mensaje = ctk.CTkLabel(self.action_frame, text="", font=("Arial", 12, "bold"))
         self.lbl_mensaje.pack(pady=4)
@@ -304,6 +321,12 @@ class HorarioView(ctk.CTkFrame):
         """Muestra los horarios ya registrados en la base de datos con nombres legibles"""
         self.textbox_horarios.delete("0.0", "end")
         horarios = self.horario_controller.obtener_horarios_registrados()
+        self.horarios_map = {
+            f"ID {h['id']} · {h.get('dia', '')} {str(h.get('hora_inicio', ''))[:5]}-{str(h.get('hora_fin', ''))[:5]}": h
+            for h in horarios if h.get("id") is not None
+        }
+        self.combo_horario.configure(values=list(self.horarios_map) or ["Selecciona un horario para editar o eliminar"])
+        self.combo_horario.set("Selecciona un horario para editar o eliminar")
         if not horarios:
             self.textbox_horarios.insert("end", "No hay horarios registrados en el sistema.\n")
             return
@@ -343,6 +366,78 @@ class HorarioView(ctk.CTkFrame):
             res = mapa[valor]
             return res["id"] if isinstance(res, dict) else res
         return None
+
+    @staticmethod
+    def _etiqueta_por_id(mapa, identificador):
+        for etiqueta, valor in mapa.items():
+            id_guardado = valor.get("id") if isinstance(valor, dict) else valor
+            if str(id_guardado) == str(identificador):
+                return etiqueta
+        return None
+
+    def seleccionar_horario(self, opcion):
+        horario = self.horarios_map.get(opcion)
+        if not horario:
+            return
+        self.combo_dia.set(str(horario.get("dia", "Lunes")))
+        self.combo_h_inicio.set(str(horario.get("hora_inicio", ""))[:5])
+        self.combo_h_fin.set(str(horario.get("hora_fin", ""))[:5])
+        for combo, mapa, campo in (
+            (self.combo_docente, self.docentes_map, "docente_id"),
+            (self.combo_aula, self.aulas_map, "aula_id"),
+            (self.combo_materia, self.materias_map, "materia_id"),
+            (self.combo_curso, self.cursos_map, "curso_id"),
+        ):
+            etiqueta = self._etiqueta_por_id(mapa, horario.get(campo))
+            if etiqueta:
+                combo.set(etiqueta)
+        self.al_seleccionar_aula(self.combo_aula.get())
+        self.al_seleccionar_curso(self.combo_curso.get())
+
+    def _datos_formulario(self):
+        datos = {
+            "dia": self.combo_dia.get(),
+            "hora_inicio": self.combo_h_inicio.get().strip(),
+            "hora_fin": self.combo_h_fin.get().strip(),
+            "docente_id": self._resolver_id(self.combo_docente.get(), self.docentes_map),
+            "aula_id": self._resolver_id(self.combo_aula.get(), self.aulas_map),
+            "materia_id": self._resolver_id(self.combo_materia.get(), self.materias_map),
+            "curso_id": self._resolver_id(self.combo_curso.get(), self.cursos_map),
+        }
+        if any(value is None or value == "" for value in datos.values()):
+            raise ValueError("Completa todos los campos con opciones registradas.")
+        return datos
+
+    def actualizar_horario(self):
+        horario = self.horarios_map.get(self.combo_horario.get())
+        if not horario:
+            self.lbl_mensaje.configure(text="⚠️ Selecciona un horario.", text_color="orange")
+            return
+        try:
+            exito, mensaje = self.horario_controller.actualizar_horario(
+                int(horario["id"]), **self._datos_formulario())
+            if exito:
+                self.refrescar_historial_horarios()
+            self.lbl_mensaje.configure(text=("✅ " if exito else "❌ ") + mensaje,
+                                       text_color="#15803d" if exito else "#b42333")
+        except Exception as error:
+            self.lbl_mensaje.configure(text=f"❌ No se pudo actualizar: {error}", text_color="#b42333")
+
+    def eliminar_horario(self):
+        horario = self.horarios_map.get(self.combo_horario.get())
+        if not horario:
+            self.lbl_mensaje.configure(text="⚠️ Selecciona un horario.", text_color="orange")
+            return
+        if not messagebox.askyesno("Eliminar horario", "¿Eliminar el horario seleccionado?", parent=self):
+            return
+        try:
+            exito, mensaje = self.horario_controller.eliminar_horario(int(horario["id"]))
+            if exito:
+                self.refrescar_historial_horarios()
+            self.lbl_mensaje.configure(text=("✅ " if exito else "❌ ") + mensaje,
+                                       text_color="#15803d" if exito else "#b42333")
+        except Exception as error:
+            self.lbl_mensaje.configure(text=f"❌ No se pudo eliminar: {error}", text_color="#b42333")
 
     def crear_horario(self):
         dia = self.combo_dia.get()

@@ -39,6 +39,27 @@ class SesionAcademicaTests(unittest.TestCase):
         with self.assertRaises(PermissionError):
             self.db.table("aulas").select().execute()
 
+    def test_edicion_y_eliminacion_envian_id_y_sesion_al_servidor(self):
+        token = "a" * 64
+        self.db.iniciar_sesion(token)
+        self.raw.rpc.return_value.execute.return_value.data = {"id": 9}
+
+        self.db.table("aulas").update({"capacidad": 40}).eq("id", 9).execute()
+        self.raw.rpc.assert_called_with("beeweek_update", {
+            "p_token": token, "p_table": "aulas", "p_id": 9,
+            "p_data": {"capacidad": 40},
+        })
+        self.db.table("horarios").delete().eq("id", 9).execute()
+        self.raw.rpc.assert_called_with("beeweek_delete", {
+            "p_token": token, "p_table": "horarios", "p_id": 9,
+        })
+
+    def test_no_permite_borrado_sin_id(self):
+        self.db.iniciar_sesion("a" * 64)
+        with self.assertRaises(ValueError):
+            self.db.table("aulas").delete().execute()
+        self.raw.rpc.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

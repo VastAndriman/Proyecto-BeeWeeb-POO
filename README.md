@@ -30,6 +30,10 @@ y aplica en su SQL Editor, en este orden:
 5. `supabase_roles_academicos.sql`: solo Administrador puede registrar recursos
    y horarios. Docente y Estudiante consultan el calendario; no pueden ver la
    lista de estudiantes y de docentes solo reciben los nombres necesarios.
+6. `supabase_aulas_unicas.sql`: retira una copia sin uso del aula 101 y evita
+   repetir números de aula.
+7. `supabase_edicion_recursos.sql`: permite a Administrador editar y eliminar
+   aulas y horarios; mantiene las validaciones de aforo y cruces en Supabase.
 
 Las migraciones se aplican de forma transaccional con la herramienta de Supabase.
 Si alguna falla, revisa el mensaje y corrige el problema antes de iniciar la
