@@ -66,11 +66,11 @@ class DocenteView(ctk.CTkFrame):
         self.cargar_docentes()
 
     def guardar_docente(self):
-        identificacion = self.entry_identificacion.get()
-        nombre = self.entry_nombre.get()
-        apellido = self.entry_apellido.get()
-        email = self.entry_email.get()
-        especialidad = self.entry_especialidad.get()
+        identificacion = self.entry_identificacion.get().strip()
+        nombre = self.entry_nombre.get().strip()
+        apellido = self.entry_apellido.get().strip()
+        email = self.entry_email.get().strip()
+        especialidad = self.entry_especialidad.get().strip()
         
         if not identificacion or not nombre or not apellido or not email or not especialidad:
             self.lbl_mensaje.configure(text="Por favor completa todos los campos.", text_color="orange")
