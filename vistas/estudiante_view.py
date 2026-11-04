@@ -76,12 +76,12 @@ class EstudianteView(ctk.CTkFrame):
         self.cargar_estudiantes()
 
     def guardar_estudiante(self):
-        identificacion = self.entry_identificacion.get()
-        nombre = self.entry_nombre.get()
-        apellido = self.entry_apellido.get()
-        email = self.entry_email.get()
-        matricula = self.entry_matricula.get()
-        carrera = self.entry_carrera.get()
+        identificacion = self.entry_identificacion.get().strip()
+        nombre = self.entry_nombre.get().strip()
+        apellido = self.entry_apellido.get().strip()
+        email = self.entry_email.get().strip()
+        matricula = self.entry_matricula.get().strip()
+        carrera = self.entry_carrera.get().strip()
         curso_id = self.cursos_map.get(self.combo_curso.get())
         
         if not identificacion or not nombre or not apellido or not email or not matricula or not carrera:
