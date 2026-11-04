@@ -7,6 +7,9 @@ class Estudiante(Persona):
         self.__matricula = matricula    # Atributo privado
         self.__carrera = carrera
 
+    def obtener_tipo(self) -> str:
+        return "Estudiante"
+
     def guardar(self):
         client = SupabaseConnection.get_client()
         data = {

@@ -10,6 +10,9 @@ class Usuario(Persona):
         self.__rol = rol
         self.__activo = activo
 
+    def obtener_tipo(self) -> str:
+        return self.__rol
+
     @property
     def id(self) -> int:
         return self.__id

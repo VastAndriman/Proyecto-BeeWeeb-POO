@@ -6,6 +6,9 @@ class Docente(Persona):
         super().__init__(identificacion, nombre, apellido, email)
         self.__especialidad = especialidad  # Atributo privado
 
+    def obtener_tipo(self) -> str:
+        return "Docente"
+
     def guardar(self):
         client = SupabaseConnection.get_client()
         data = {
