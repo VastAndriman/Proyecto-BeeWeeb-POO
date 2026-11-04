@@ -1,6 +1,7 @@
 from datetime import time
 
 from conexion.supabase_client import SupabaseConnection
+from patrones_creacionales_beeweek import HorarioBuilder
 
 class HorarioController:
     _instancia_defecto = None
@@ -93,12 +94,17 @@ class HorarioController:
         num_estudiantes = num_estudiantes if num_estudiantes is not None else kwargs.get("num_estudiantes")
 
         try:
-            inicio = HorarioController.convertir_hora(hora_inicio)
-            fin = HorarioController.convertir_hora(hora_fin)
-        except (TypeError, ValueError):
-            return False, "Ingresa horas válidas en formato HH:MM."
-        if inicio >= fin:
-            return False, "La hora de fin debe ser posterior a la hora de inicio."
+            horario = (HorarioBuilder().dia(dia).horas(hora_inicio, hora_fin)
+                       .materia(materia_id).docente(docente_id)
+                       .aula(aula_id).curso(curso_id).construir())
+        except ValueError as error:
+            return False, str(error)
+        dia = horario.dia
+        inicio = HorarioController.convertir_hora(horario.hora_inicio)
+        fin = HorarioController.convertir_hora(horario.hora_fin)
+        curso_id = horario.curso_id
+        aula_id = horario.aula_id
+        docente_id = horario.docente_id
 
         client = inst.db
 
@@ -146,15 +152,7 @@ class HorarioController:
                 return False, "Conflicto: El curso ya tiene una clase asignada en este bloque horario."
 
         # 3. Si pasa todas las validaciones, se registra el horario en Supabase
-        nuevo_horario = {
-            "dia": dia,
-            "hora_inicio": hora_inicio,
-            "hora_fin": hora_fin,
-            "materia_id": materia_id,
-            "docente_id": docente_id,
-            "aula_id": aula_id,
-            "curso_id": curso_id
-        }
+        nuevo_horario = horario.para_guardar()
         
         client.table("horarios").insert(nuevo_horario).execute()
         return True, "¡Horario registrado exitosamente sin cruces!"

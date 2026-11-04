@@ -36,6 +36,19 @@ antiguo script de autenticación que permitía consultar la tabla de usuarios.
   y la relación estudiante-curso sin modificar la base.
 - `python test_conexion.py` comprueba la conexión con una consulta de solo lectura.
 
+## Patrones creacionales
+
+- **Singleton:** `SupabaseConnection.get_client()` comparte el cliente de Supabase.
+- **Factory Method:** `CreadorDocente` y `CreadorEstudiante` crean los modelos
+  concretos; las vistas de registro usan su método común `registrar()`.
+- **Builder:** `HorarioBuilder` prepara un `HorarioPreparado` completo antes de
+  que `HorarioController` consulte aforo y cruces y lo guarde.
+
+La implementación está en `patrones_creacionales_beeweek.py`. Se puede ejecutar
+`python patrones_creacionales_beeweek.py` para ver una demostración sin conexión
+ni cambios en la base. Las pruebas de integración local están en
+`tests/test_patrones_creacionales.py`.
+
 Esta migración protege las credenciales de la tabla `usuarios`, pero las demás
 tablas aún requieren políticas de acceso por usuario. No uses datos personales
 reales de terceros hasta completar esa protección. La aplicación todavía no

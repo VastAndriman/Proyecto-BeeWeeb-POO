@@ -1,10 +1,12 @@
 import customtkinter as ctk
 from conexion.supabase_client import SupabaseConnection
+from patrones_creacionales_beeweek import CreadorDocente
 
 class DocenteView(ctk.CTkFrame):
     def __init__(self, master, db_client=None):
         super().__init__(master, fg_color="transparent")
         self.db = db_client if db_client is not None else SupabaseConnection.get_client()
+        self.creador_docente = CreadorDocente()
         
         # Header / Título de la vista
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -75,15 +77,14 @@ class DocenteView(ctk.CTkFrame):
             return
             
         try:
-            client = self.db
-            data = {
-                "identificacion": identificacion,
-                "nombre": nombre,
-                "apellido": apellido,
-                "email": email,
-                "especialidad": especialidad
-            }
-            client.table("docentes").insert(data).execute()
+            self.creador_docente.registrar(
+                identificacion=identificacion,
+                nombre=nombre,
+                apellido=apellido,
+                email=email,
+                especialidad=especialidad,
+                db_client=self.db,
+            )
             self.lbl_mensaje.configure(text="¡Docente guardado con éxito!", text_color="#15803d")
             
             # Limpiar campos

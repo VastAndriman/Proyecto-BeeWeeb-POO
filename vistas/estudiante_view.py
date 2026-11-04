@@ -1,10 +1,12 @@
 import customtkinter as ctk
 from conexion.supabase_client import SupabaseConnection
+from patrones_creacionales_beeweek import CreadorEstudiante
 
 class EstudianteView(ctk.CTkFrame):
     def __init__(self, master, db_client=None):
         super().__init__(master, fg_color="transparent")
         self.db = db_client if db_client is not None else SupabaseConnection.get_client()
+        self.creador_estudiante = CreadorEstudiante()
 
         ctk.CTkLabel(
             self, text="Gestión de Estudiantes", font=("Arial", 22, "bold")
@@ -87,17 +89,16 @@ class EstudianteView(ctk.CTkFrame):
             return
             
         try:
-            client = self.db
-            data = {
-                "identificacion": identificacion,
-                "nombre": nombre,
-                "apellido": apellido,
-                "email": email,
-                "matricula": matricula,
-                "carrera": carrera,
-                "curso_id": curso_id
-            }
-            client.table("estudiantes").insert(data).execute()
+            self.creador_estudiante.registrar(
+                identificacion=identificacion,
+                nombre=nombre,
+                apellido=apellido,
+                email=email,
+                matricula=matricula,
+                carrera=carrera,
+                curso_id=curso_id,
+                db_client=self.db,
+            )
             self.lbl_mensaje.configure(text="¡Estudiante guardado con éxito en la nube!", text_color="green")
             
             # Limpiar campos
