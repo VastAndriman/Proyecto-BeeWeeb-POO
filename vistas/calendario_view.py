@@ -67,6 +67,24 @@ class CalendarioView(ctk.CTkFrame):
                 return fila
         return None
 
+    @staticmethod
+    def filas_para_intervalo(hora_inicio, hora_fin, bloques):
+        """Devuelve la primera fila y cuántos bloques ocupa una clase."""
+        fila = CalendarioView.fila_para_hora(hora_inicio, bloques)
+        if fila is None:
+            return None, 0
+        try:
+            fin = time.fromisoformat(str(hora_fin).strip())
+        except (TypeError, ValueError):
+            return fila, 1
+        ocupados = 0
+        for bloque in bloques[fila - 1:]:
+            inicio_bloque = time.fromisoformat(bloque.split("-")[0].strip())
+            if inicio_bloque >= fin:
+                break
+            ocupados += 1
+        return fila, max(1, ocupados)
+
     def construir_encabezados(self):
         # Esquina superior izquierda vacía (Hora/Día)
         lbl_corner = ctk.CTkLabel(self.grid_container, text="Hora / Día", font=("Arial", 11, "bold"), text_color="gray", width=110)
@@ -122,13 +140,14 @@ class CalendarioView(ctk.CTkFrame):
                 
                 if dia_str in self.dias:
                     col_idx = self.dias.index(dia_str) + 1
-                    row_idx = self.fila_para_hora(hora_ini, self.bloques)
+                    row_idx, filas = self.filas_para_intervalo(hora_ini, hora_fin, self.bloques)
                     if row_idx is None:
                         continue
                     
                     # Colocar tarjeta de la materia en la celda
                     card_materia = ctk.CTkFrame(self.grid_container, fg_color="#e8e1fb", corner_radius=8, border_width=1, border_color="#c7b8e9")
-                    card_materia.grid(row=row_idx, column=col_idx, padx=3, pady=3, sticky="nsew")
+                    card_materia.grid(row=row_idx, column=col_idx, rowspan=filas,
+                                      padx=3, pady=3, sticky="nsew")
                     
                     texto_tarjeta = f"📘 {materia_nom}"
                     texto_tarjeta += f"\n📍 Aula: {aula_nom}"

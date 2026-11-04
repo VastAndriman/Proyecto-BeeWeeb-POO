@@ -32,6 +32,44 @@ class CalendarioTests(unittest.TestCase):
         self.assertIsNone(CalendarioView.fila_para_hora("10:00", bloques))
         self.assertIsNone(CalendarioView.fila_para_hora("hora inválida", bloques))
 
+    def test_clase_larga_ocupa_todas_sus_horas(self):
+        bloques = [f"{hora:02d}:00 - {hora + 1:02d}:00" for hora in range(7, 19)]
+        self.assertEqual(
+            CalendarioView.filas_para_intervalo("07:00", "19:00", bloques),
+            (1, 12),
+        )
+        self.assertEqual(
+            CalendarioView.filas_para_intervalo("08:00", "10:00", bloques),
+            (2, 2),
+        )
+
+    def test_tarjeta_del_calendario_cubre_intervalo_completo(self):
+        controller = Mock()
+        controller.obtener_materias.return_value = [{"id": 1, "nombre": "POO"}]
+        controller.obtener_aulas.return_value = [{"id": 2, "numero": "101"}]
+        controller.obtener_docentes.return_value = [{"id": 3, "nombre": "Ana"}]
+        controller.obtener_cursos.return_value = [{"id": 4, "nombre": "A"}]
+        controller.obtener_horarios_registrados.return_value = [{
+            "dia": "Viernes", "hora_inicio": "07:00:00", "hora_fin": "19:00:00",
+            "materia_id": 1, "aula_id": 2, "docente_id": 3, "curso_id": 4,
+        }]
+        calendario = SimpleNamespace(
+            lbl_estado=Mock(), grid_container=Mock(),
+            dias=["Viernes"],
+            bloques=[f"{hora:02d}:00 - {hora + 1:02d}:00" for hora in range(7, 19)],
+            horario_controller=controller,
+            normalizar_dia=lambda dia: dia,
+            filas_para_intervalo=CalendarioView.filas_para_intervalo,
+        )
+        calendario.grid_container.winfo_children.return_value = []
+
+        with patch("vistas.calendario_view.ctk.CTkLabel"), patch(
+            "vistas.calendario_view.ctk.CTkFrame"
+        ) as frame:
+            CalendarioView.cargar_horarios(calendario)
+
+        self.assertEqual(frame.return_value.grid.call_args.kwargs["rowspan"], 12)
+
 
 if __name__ == "__main__":
     unittest.main()
