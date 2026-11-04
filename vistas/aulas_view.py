@@ -85,6 +85,9 @@ class AulasView(ctk.CTkFrame):
 
     def cargar_aulas(self):
         self.textbox.delete("0.0", "end")
+        self.aulas_por_opcion = {}
+        self.selector.configure(values=["Selecciona un aula"])
+        self.selector.set("Selecciona un aula")
         try:
             aulas = self.db.table("aulas").select("*").execute().data or []
             self.aulas_por_opcion = {
