@@ -27,6 +27,11 @@ class AuthController:
     def cerrar_sesion(self_or_cls=None):
         """Limpia la sesión activa."""
         inst = self_or_cls if isinstance(self_or_cls, AuthController) else AuthController._get_instancia_defecto()
+        if hasattr(inst.db, "cerrar_sesion"):
+            try:
+                inst.db.cerrar_sesion()
+            except Exception:
+                pass  # La sesion local se invalida aunque falle la red.
         inst.usuario_actual = None
         AuthController._usuario_actual = None
 
@@ -61,6 +66,9 @@ class AuthController:
             user_record = respuesta.data
             if not user_record:
                 return False, "Usuario o contraseña incorrectos, o cuenta desactivada.", None
+
+            if hasattr(self.db, "iniciar_sesion"):
+                self.db.iniciar_sesion(user_record.get("session_token"))
 
             # Instanciar el objeto Usuario (POO)
             usuario_logueado = Usuario(

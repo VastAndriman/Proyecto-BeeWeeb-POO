@@ -5,7 +5,9 @@ from conexion.supabase_client import SupabaseConnection
 
 if __name__ == "__main__":
     try:
-        SupabaseConnection.get_client().table("aulas").select("id").limit(1).execute()
+        SupabaseConnection.get_client().rpc("beeweek_login", {
+            "p_login": "__beeweek_verificacion__", "p_password": "sin_clave",
+        }).execute()
         print("Conexión con Supabase correcta.")
     except Exception as error:
         print(f"No se pudo conectar con Supabase: {error}")

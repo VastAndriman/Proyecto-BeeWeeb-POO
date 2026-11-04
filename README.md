@@ -24,6 +24,9 @@ y aplica en su SQL Editor, en este orden:
    las claves foráneas de horarios y una validación de cruces y aforo en la base.
 3. `supabase_horario_restricciones.sql`: exige datos completos y valores válidos
    para horarios, cursos y aulas.
+4. `supabase_sesiones_academicas.sql`: crea sesiones temporales para el login y
+   protege las seis tablas academicas con RLS y sin acceso directo de la clave
+   publica. Esta migracion y el cliente Python actualizado deben usarse juntos.
 
 Las migraciones se aplican de forma transaccional con la herramienta de Supabase.
 Si alguna falla, revisa el mensaje y corrige el problema antes de iniciar la
@@ -49,7 +52,8 @@ La implementación está en `patrones_creacionales_beeweek.py`. Se puede ejecuta
 ni cambios en la base. Las pruebas de integración local están en
 `tests/test_patrones_creacionales.py`.
 
-Esta migración protege las credenciales de la tabla `usuarios`, pero las demás
-tablas aún requieren políticas de acceso por usuario. No uses datos personales
-reales de terceros hasta completar esa protección. La aplicación todavía no
-verifica que el correo institucional exista ni ofrece recuperación de contraseña.
+El acceso a las tablas academicas requiere una sesion iniciada, pero todos los
+usuarios registrados aun tienen el mismo acceso a los datos academicos. Como el
+registro permite un correo institucional sin verificar su existencia, no uses
+datos personales reales de terceros hasta implementar verificacion de correo y
+permisos por rol. La aplicacion tampoco ofrece recuperacion de contraseña.
