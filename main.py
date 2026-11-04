@@ -41,6 +41,7 @@ class BeeWeekApp(ctk.CTk):
         self.content_area = None
         self.vistas = {}
         self.login_view = None
+        self.rol_actual = None
 
         # Iniciar directamente con la pantalla de autenticación
         self.mostrar_login()
@@ -67,6 +68,7 @@ class BeeWeekApp(ctk.CTk):
 
     def iniciar_aplicacion_principal(self, usuario):
         """Carga la interfaz principal y los módulos una vez autenticado el usuario."""
+        self.rol_actual = usuario.obtener_tipo()
         if self.login_view:
             self.login_view.destroy()
             self.login_view = None
@@ -82,6 +84,8 @@ class BeeWeekApp(ctk.CTk):
             self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
             self.content_area.grid(row=0, column=1, sticky="nsew", padx=0, pady=0)
 
+        self._aplicar_permisos_visuales()
+
         # Actualizar datos del usuario logueado en la barra lateral y dashboard
         nombre_completo = usuario.get_nombre_completo()
         self.lbl_user.configure(
@@ -91,6 +95,18 @@ class BeeWeekApp(ctk.CTk):
 
         self.cambiar_vista("dashboard")
         self.actualizar_metricas()
+
+    def _aplicar_permisos_visuales(self):
+        """Muestra las pantallas que corresponden al rol; el servidor tambien lo valida."""
+        gestion = (
+            self.btn_horarios, self.btn_aulas, self.btn_docentes,
+            self.btn_estudiantes, self.btn_academico, self.btn_reportes,
+        )
+        for boton in gestion:
+            if self.rol_actual == "Administrador":
+                boton.grid()
+            else:
+                boton.grid_remove()
 
     def _construir_interfaz_principal(self):
         # ==========================================
@@ -236,6 +252,8 @@ class BeeWeekApp(ctk.CTk):
             self.card_horarios_val.configure(text="Err")
 
     def cambiar_vista(self, nombre_vista):
+        if self.rol_actual != "Administrador" and nombre_vista not in ("dashboard", "calendario"):
+            nombre_vista = "calendario"
         for vista in self.vistas.values():
             vista.pack_forget()
         vista_activa = self.vistas[nombre_vista]
@@ -254,6 +272,7 @@ class BeeWeekApp(ctk.CTk):
     def cerrar_sesion(self):
         """Cierra la sesión actual y regresa a la pantalla de login."""
         self.auth_controller.cerrar_sesion()
+        self.rol_actual = None
         self.mostrar_login()
 
 if __name__ == "__main__":

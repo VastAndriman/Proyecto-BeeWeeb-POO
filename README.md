@@ -27,6 +27,9 @@ y aplica en su SQL Editor, en este orden:
 4. `supabase_sesiones_academicas.sql`: crea sesiones temporales para el login y
    protege las seis tablas academicas con RLS y sin acceso directo de la clave
    publica. Esta migracion y el cliente Python actualizado deben usarse juntos.
+5. `supabase_roles_academicos.sql`: solo Administrador puede registrar recursos
+   y horarios. Docente y Estudiante consultan el calendario; no pueden ver la
+   lista de estudiantes y de docentes solo reciben los nombres necesarios.
 
 Las migraciones se aplican de forma transaccional con la herramienta de Supabase.
 Si alguna falla, revisa el mensaje y corrige el problema antes de iniciar la
@@ -52,8 +55,7 @@ La implementación está en `patrones_creacionales_beeweek.py`. Se puede ejecuta
 ni cambios en la base. Las pruebas de integración local están en
 `tests/test_patrones_creacionales.py`.
 
-El acceso a las tablas academicas requiere una sesion iniciada, pero todos los
-usuarios registrados aun tienen el mismo acceso a los datos academicos. Como el
-registro permite un correo institucional sin verificar su existencia, no uses
-datos personales reales de terceros hasta implementar verificacion de correo y
-permisos por rol. La aplicacion tampoco ofrece recuperacion de contraseña.
+El acceso a las tablas academicas requiere una sesion iniciada y permisos por
+rol. Como el registro permite un correo institucional sin verificar su
+existencia, usa datos ficticios para la demostracion. La aplicacion tampoco
+ofrece recuperacion de contraseña.
