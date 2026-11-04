@@ -60,7 +60,10 @@ class HorarioController:
         inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
             res = inst.db.table("cursos").select("*").execute()
-            return res.data or []
+            return [
+                {**curso, "nombre": curso.get("nombre") or f"Paralelo {curso.get('paralelo', '')}"}
+                for curso in (res.data or [])
+            ]
         except Exception:
             return []
 

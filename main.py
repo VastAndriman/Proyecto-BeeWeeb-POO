@@ -12,8 +12,10 @@ from vistas.calendario_view import CalendarioView
 from vistas.reportes_view import ReportesView
 from vistas.docente_view import DocenteView
 from vistas.login_view import LoginView
+from vistas.academico_view import AcademicoView
 from controladores.auth_controller import AuthController
 from controladores.horario_controller import HorarioController
+from controladores.academico_controller import AcademicoController
 from conexion.supabase_client import SupabaseConnection
 
 ctk.set_appearance_mode("Dark")
@@ -32,6 +34,7 @@ class BeeWeekApp(ctk.CTk):
         self.db_client = db_client if db_client is not None else SupabaseConnection.get_client()
         self.auth_controller = AuthController(self.db_client)
         self.horario_controller = HorarioController(self.db_client)
+        self.academico_controller = AcademicoController(self.db_client)
 
         self.sidebar_frame = None
         self.content_area = None
@@ -96,7 +99,7 @@ class BeeWeekApp(ctk.CTk):
         
         self.sidebar_frame = ctk.CTkFrame(self, width=250, corner_radius=0, fg_color=("#1e293b", "#0f172a"))
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(8, weight=1)
+        self.sidebar_frame.grid_rowconfigure(9, weight=1)
         
         # Logo y Subtítulo (Reemplazo de la abeja por el cuadro azul)
         assets_dir = os.path.join(os.path.dirname(__file__), "assets")
@@ -135,12 +138,15 @@ class BeeWeekApp(ctk.CTk):
         self.btn_docentes = ctk.CTkButton(self.sidebar_frame, text="👨‍🏫 Gestión Docentes", fg_color="transparent", text_color="#f8fafc", anchor="w", hover_color="#334155", command=lambda: self.cambiar_vista("docentes"))
         self.btn_docentes.grid(row=6, column=0, padx=15, pady=6, sticky="ew")
 
+        self.btn_academico = ctk.CTkButton(self.sidebar_frame, text="📚 Materias y Cursos", fg_color="transparent", text_color="#f8fafc", anchor="w", hover_color="#334155", command=lambda: self.cambiar_vista("academico"))
+        self.btn_academico.grid(row=7, column=0, padx=15, pady=6, sticky="ew")
+
         self.btn_reportes = ctk.CTkButton(self.sidebar_frame, text="📑 Reportes", fg_color="transparent", text_color="#f8fafc", anchor="w", hover_color="#334155", command=lambda: self.cambiar_vista("reportes"))
-        self.btn_reportes.grid(row=7, column=0, padx=15, pady=6, sticky="ew")  
+        self.btn_reportes.grid(row=8, column=0, padx=15, pady=6, sticky="ew")
         
         # Footer del Usuario y Cerrar Sesión
         self.lbl_user = ctk.CTkLabel(self.sidebar_frame, text="👤 Usuario\n🌐 uleam.edu.ec", font=("Arial", 11), text_color="#94a3b8", anchor="w", justify="left")
-        self.lbl_user.grid(row=9, column=0, padx=20, pady=(15, 6), sticky="sw")
+        self.lbl_user.grid(row=10, column=0, padx=20, pady=(15, 6), sticky="sw")
 
         self.btn_logout = ctk.CTkButton(
             self.sidebar_frame,
@@ -152,7 +158,7 @@ class BeeWeekApp(ctk.CTk):
             font=("Arial", 12, "bold"),
             command=self.cerrar_sesion
         )
-        self.btn_logout.grid(row=10, column=0, padx=15, pady=(0, 20), sticky="ew")
+        self.btn_logout.grid(row=11, column=0, padx=15, pady=(0, 20), sticky="ew")
 
         # ==========================================
         # 2. CONTENEDOR PRINCIPAL
@@ -170,6 +176,7 @@ class BeeWeekApp(ctk.CTk):
         self.vistas["horarios"] = HorarioView(self.content_area, horario_controller=self.horario_controller)
         self.vistas["aulas"] = AulasView(self.content_area, db_client=self.db_client)
         self.vistas["docentes"] = DocenteView(self.content_area, db_client=self.db_client)
+        self.vistas["academico"] = AcademicoView(self.content_area, academico_controller=self.academico_controller)
         self.vistas["reportes"] = ReportesView(self.content_area, horario_controller=self.horario_controller)
 
     def _construir_dashboard(self, parent):
