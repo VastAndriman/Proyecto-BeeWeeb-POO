@@ -238,8 +238,36 @@ class HorarioView(ctk.CTkFrame):
         """Carga aulas, docentes, materias y cursos en los selectores desplegables"""
         self.lbl_mensaje.configure(text="Sincronizando listas con Supabase...", text_color="#7256ac")
 
+        try:
+            docentes = self.horario_controller.obtener_docentes(estricto=True)
+            aulas = self.horario_controller.obtener_aulas(estricto=True)
+            materias = self.horario_controller.obtener_materias(estricto=True)
+            cursos = self.horario_controller.obtener_cursos(estricto=True)
+        except Exception:
+            for mapa in (self.docentes_map, self.aulas_map, self.materias_map,
+                         self.cursos_map, self.horarios_map):
+                mapa.clear()
+            for combo, aviso in (
+                (self.combo_docente, "Sin docentes cargados"),
+                (self.combo_aula, "Sin aulas cargadas"),
+                (self.combo_materia, "Sin materias cargadas"),
+                (self.combo_curso, "Sin cursos cargados"),
+                (self.combo_horario, "Selecciona un horario para editar o eliminar"),
+            ):
+                combo.configure(values=[aviso])
+                combo.set(aviso)
+            self.al_seleccionar_aula("")
+            self.al_seleccionar_curso("")
+            self.textbox_horarios.delete("0.0", "end")
+            self.textbox_horarios.insert("end", "No se pudieron cargar los horarios.")
+            self.btn_crear.configure(state="disabled")
+            self.lbl_mensaje.configure(
+                text="No se pudieron sincronizar los datos. Revisa tu conexión y pulsa Actualizar Opciones.",
+                text_color="#b42333",
+            )
+            return
+
         # 1. Cargar Docentes
-        docentes = self.horario_controller.obtener_docentes()
         self.docentes_map.clear()
         docentes_vals = []
         for d in docentes:
@@ -254,7 +282,6 @@ class HorarioView(ctk.CTkFrame):
             self.combo_docente.set("Sin docentes registrados")
 
         # 2. Cargar Aulas
-        aulas = self.horario_controller.obtener_aulas()
         self.aulas_map.clear()
         aulas_vals = []
         for a in aulas:
@@ -271,7 +298,6 @@ class HorarioView(ctk.CTkFrame):
             self.al_seleccionar_aula("")
 
         # 3. Cargar Materias
-        materias = self.horario_controller.obtener_materias()
         self.materias_map.clear()
         materias_vals = []
         for m in materias:
@@ -285,7 +311,6 @@ class HorarioView(ctk.CTkFrame):
             self.combo_materia.set("Sin materias registradas")
 
         # 4. Cargar Cursos
-        cursos = self.horario_controller.obtener_cursos()
         self.cursos_map.clear()
         cursos_vals = []
         for c in cursos:
