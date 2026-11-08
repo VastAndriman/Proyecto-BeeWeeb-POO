@@ -328,13 +328,18 @@ class HorarioView(ctk.CTkFrame):
             self.al_seleccionar_curso("")
 
         # 5. Cargar Horarios Registrados en el historial
-        self.refrescar_historial_horarios()
+        historial_ok = self.refrescar_historial_horarios()
         faltantes = [nombre for nombre, opciones in (
             ("docentes", docentes_vals), ("aulas", aulas_vals),
             ("materias", materias_vals), ("cursos", cursos_vals)
         ) if not opciones]
-        self.btn_crear.configure(state="disabled" if faltantes else "normal")
-        if faltantes:
+        self.btn_crear.configure(state="disabled" if faltantes or not historial_ok else "normal")
+        if not historial_ok:
+            self.lbl_mensaje.configure(
+                text="No se pudo cargar el historial de horarios. Revisa tu conexión y pulsa Actualizar Opciones.",
+                text_color="#b42333",
+            )
+        elif faltantes:
             self.lbl_mensaje.configure(
                 text="⚠️ Faltan datos reales: " + ", ".join(faltantes) + ".",
                 text_color="orange"
@@ -345,7 +350,20 @@ class HorarioView(ctk.CTkFrame):
     def refrescar_historial_horarios(self):
         """Muestra los horarios ya registrados en la base de datos con nombres legibles"""
         self.textbox_horarios.delete("0.0", "end")
-        horarios = self.horario_controller.obtener_horarios_registrados()
+        self.horarios_map = {}
+        aviso = "Selecciona un horario para editar o eliminar"
+        self.combo_horario.configure(values=[aviso])
+        self.combo_horario.set(aviso)
+        try:
+            horarios = self.horario_controller.obtener_horarios_registrados(estricto=True)
+            if horarios:
+                materias_lookup = {str(m.get("id")): m.get("nombre", "") for m in self.horario_controller.obtener_materias(estricto=True)}
+                cursos_lookup = {str(c.get("id")): c.get("nombre", "") for c in self.horario_controller.obtener_cursos(estricto=True)}
+                aulas_lookup = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in self.horario_controller.obtener_aulas(estricto=True)}
+                docentes_lookup = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes(estricto=True)}
+        except Exception:
+            self.textbox_horarios.insert("end", "No se pudo cargar el historial de horarios.\n")
+            return False
         self.horarios_map = {
             f"ID {h['id']} · {h.get('dia', '')} {str(h.get('hora_inicio', ''))[:5]}-{str(h.get('hora_fin', ''))[:5]}": h
             for h in horarios if h.get("id") is not None
@@ -354,13 +372,7 @@ class HorarioView(ctk.CTkFrame):
         self.combo_horario.set("Selecciona un horario para editar o eliminar")
         if not horarios:
             self.textbox_horarios.insert("end", "No hay horarios registrados en el sistema.\n")
-            return
-
-        # Mapeos rápidos para mostrar nombres en lugar de sólo IDs
-        materias_lookup = {str(m.get("id")): m.get("nombre", "") for m in self.horario_controller.obtener_materias()}
-        cursos_lookup = {str(c.get("id")): c.get("nombre", "") for c in self.horario_controller.obtener_cursos()}
-        aulas_lookup = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in self.horario_controller.obtener_aulas()}
-        docentes_lookup = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes()}
+            return True
 
         encabezado = f"{'DÍA':<10} | {'HORA':<13} | {'AULA':<12} | {'DOCENTE':<20} | {'MATERIA':<28} | {'CURSO':<18}\n"
         encabezado += "=" * 108 + "\n"
@@ -384,6 +396,7 @@ class HorarioView(ctk.CTkFrame):
 
             linea = f"{dia:<10} | {hora_str:<13} | {aula_nom:<12} | {docente_nom:<20} | {materia_nom:<28} | {curso_nom:<18}\n"
             self.textbox_horarios.insert("end", linea)
+        return True
 
     def _resolver_id(self, valor, mapa):
         """Acepta únicamente una opción cargada desde la base de datos."""
