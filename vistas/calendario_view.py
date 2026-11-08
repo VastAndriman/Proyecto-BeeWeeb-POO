@@ -116,12 +116,12 @@ class CalendarioView(ctk.CTkFrame):
 
         # Consultar la base de datos para mapear las clases guardadas
         try:
-            materias_map = {str(m.get("id")): m.get("nombre", f"Materia {m.get('id')}") for m in self.horario_controller.obtener_materias()}
-            aulas_map = {str(a.get("id")): str(a.get("numero", a.get("id"))) for a in self.horario_controller.obtener_aulas()}
-            docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes()}
-            cursos_map = {str(c.get("id")): c.get("nombre", "") for c in self.horario_controller.obtener_cursos()}
+            materias_map = {str(m.get("id")): m.get("nombre", f"Materia {m.get('id')}") for m in self.horario_controller.obtener_materias(estricto=True)}
+            aulas_map = {str(a.get("id")): str(a.get("numero", a.get("id"))) for a in self.horario_controller.obtener_aulas(estricto=True)}
+            docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes(estricto=True)}
+            cursos_map = {str(c.get("id")): c.get("nombre", "") for c in self.horario_controller.obtener_cursos(estricto=True)}
 
-            horarios = self.horario_controller.obtener_horarios_registrados()
+            horarios = self.horario_controller.obtener_horarios_registrados(estricto=True)
             
             for h in (horarios or []):
                 dia_str = self.normalizar_dia(h.get("dia") or h.get("dia_semana") or "")

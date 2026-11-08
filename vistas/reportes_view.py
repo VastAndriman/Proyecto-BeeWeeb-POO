@@ -82,12 +82,12 @@ class ReportesView(ctk.CTkFrame):
                     self.txt_reporte.insert("end", f"{row.get('id',''):<6} | {row.get('numero',''):<12} | {row.get('capacidad',''):<14} | {row.get('tipo',''):<20}\n")
                     self.csv_filas.append([row.get("id"), row.get("numero"), row.get("capacidad"), row.get("tipo")])
             else:
-                materias_map = {str(m.get("id")): m.get("nombre", f"ID: {m.get('id')}") for m in self.horario_controller.obtener_materias()}
-                aulas_map = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in self.horario_controller.obtener_aulas()}
-                docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes()}
-                cursos_map = {str(c.get("id")): c.get("nombre", f"ID: {c.get('id')}") for c in self.horario_controller.obtener_cursos()}
+                materias_map = {str(m.get("id")): m.get("nombre", f"ID: {m.get('id')}") for m in self.horario_controller.obtener_materias(estricto=True)}
+                aulas_map = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in self.horario_controller.obtener_aulas(estricto=True)}
+                docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes(estricto=True)}
+                cursos_map = {str(c.get("id")): c.get("nombre", f"ID: {c.get('id')}") for c in self.horario_controller.obtener_cursos(estricto=True)}
 
-                data = self.horario_controller.obtener_horarios_registrados()
+                data = self.horario_controller.obtener_horarios_registrados(estricto=True)
                 self.csv_columnas = ["Día", "Hora", "Aula", "Docente", "Materia", "Curso"]
                 
                 self.txt_reporte.insert("end", f"{'DÍA':<10} | {'HORA':<13} | {'AULA':<12} | {'DOCENTE':<22} | {'MATERIA':<28} | {'CURSO':<15}\n")

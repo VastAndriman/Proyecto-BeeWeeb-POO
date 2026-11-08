@@ -33,31 +33,37 @@ class HorarioController:
         """Acepta horas HH:MM y HH:MM:SS, como las devuelve Supabase."""
         return time.fromisoformat(str(valor).strip())
 
-    def obtener_aulas(self_or_cls=None):
+    def obtener_aulas(self_or_cls=None, *, estricto=False):
         inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
             res = inst.db.table("aulas").select("*").execute()
             return res.data if res.data else []
         except Exception:
+            if estricto:
+                raise
             return []
 
-    def obtener_docentes(self_or_cls=None):
+    def obtener_docentes(self_or_cls=None, *, estricto=False):
         inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
             res = inst.db.table("docentes").select("*").execute()
             return res.data if res.data else []
         except Exception:
+            if estricto:
+                raise
             return []
 
-    def obtener_materias(self_or_cls=None):
+    def obtener_materias(self_or_cls=None, *, estricto=False):
         inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
             res = inst.db.table("materias").select("*").execute()
             return res.data or []
         except Exception:
+            if estricto:
+                raise
             return []
 
-    def obtener_cursos(self_or_cls=None):
+    def obtener_cursos(self_or_cls=None, *, estricto=False):
         inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
             res = inst.db.table("cursos").select("*").execute()
@@ -66,14 +72,18 @@ class HorarioController:
                 for curso in (res.data or [])
             ]
         except Exception:
+            if estricto:
+                raise
             return []
 
-    def obtener_horarios_registrados(self_or_cls=None):
+    def obtener_horarios_registrados(self_or_cls=None, *, estricto=False):
         inst = self_or_cls if isinstance(self_or_cls, HorarioController) else HorarioController._get_instancia_defecto()
         try:
             res = inst.db.table("horarios").select("*").execute()
             return res.data if res.data else []
         except Exception:
+            if estricto:
+                raise
             return []
 
     def validar_y_crear_horario(self_or_dia=None, dia=None, hora_inicio=None, hora_fin=None, materia_id=None, docente_id=None, aula_id=None, curso_id=None, num_estudiantes=None, *args, **kwargs):
