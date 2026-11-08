@@ -446,6 +446,17 @@ class HorarioView(ctk.CTkFrame):
             raise ValueError("Completa todos los campos con opciones registradas.")
         return datos
 
+    def _mostrar_resultado_horario(self, exito, mensaje):
+        if not exito:
+            self.lbl_mensaje.configure(text=f"❌ {mensaje}", text_color="#b42333")
+        elif self.refrescar_historial_horarios():
+            self.lbl_mensaje.configure(text=f"✅ {mensaje}", text_color="#15803d")
+        else:
+            self.lbl_mensaje.configure(
+                text=f"✅ {mensaje} No se pudo actualizar el historial; pulsa Actualizar Opciones.",
+                text_color="#9a6700",
+            )
+
     def actualizar_horario(self):
         horario = self.horarios_map.get(self.combo_horario.get())
         if not horario:
@@ -454,10 +465,7 @@ class HorarioView(ctk.CTkFrame):
         try:
             exito, mensaje = self.horario_controller.actualizar_horario(
                 int(horario["id"]), **self._datos_formulario())
-            if exito:
-                self.refrescar_historial_horarios()
-            self.lbl_mensaje.configure(text=("✅ " if exito else "❌ ") + mensaje,
-                                       text_color="#15803d" if exito else "#b42333")
+            self._mostrar_resultado_horario(exito, mensaje)
         except Exception as error:
             self.lbl_mensaje.configure(text=f"❌ No se pudo actualizar: {error}", text_color="#b42333")
 
@@ -470,10 +478,7 @@ class HorarioView(ctk.CTkFrame):
             return
         try:
             exito, mensaje = self.horario_controller.eliminar_horario(int(horario["id"]))
-            if exito:
-                self.refrescar_historial_horarios()
-            self.lbl_mensaje.configure(text=("✅ " if exito else "❌ ") + mensaje,
-                                       text_color="#15803d" if exito else "#b42333")
+            self._mostrar_resultado_horario(exito, mensaje)
         except Exception as error:
             self.lbl_mensaje.configure(text=f"❌ No se pudo eliminar: {error}", text_color="#b42333")
 
@@ -521,10 +526,6 @@ class HorarioView(ctk.CTkFrame):
                 curso_id=int(curso_id)
             )
 
-            if exito:
-                self.lbl_mensaje.configure(text=f"✅ {mensaje}", text_color="#15803d")
-                self.refrescar_historial_horarios()
-            else:
-                self.lbl_mensaje.configure(text=f"❌ {mensaje}", text_color="#b42333")
+            self._mostrar_resultado_horario(exito, mensaje)
         except Exception as e:
             self.lbl_mensaje.configure(text=f"❌ Error al procesar el horario: {e}", text_color="#b42333")
