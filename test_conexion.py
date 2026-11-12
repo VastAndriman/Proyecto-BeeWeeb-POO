@@ -11,3 +11,4 @@ if __name__ == "__main__":
         print("Conexión con Supabase correcta.")
     except Exception as error:
         print(f"No se pudo conectar con Supabase: {error}")
+        raise SystemExit(1) from None

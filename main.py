@@ -217,19 +217,20 @@ class BeeWeekApp(ctk.CTk):
         card2, self.card_horarios_val = self._crear_tarjeta(cards_frame, "Horarios Activos", "#15803d")
         card2.pack(side="left", padx=15, expand=True, fill="both")
         
-        btn_refresh = ctk.CTkButton(parent, text="🔄 Sincronizar Métrica Supabase", command=self.actualizar_metricas, fg_color="#7256ac")
+        btn_refresh = ctk.CTkButton(parent, text="🔄 Actualizar datos", command=self.actualizar_metricas, fg_color="#7256ac")
         btn_refresh.pack(anchor="w", padx=30, pady=10)
 
-        # Panel Informativo
+        self.lbl_estado_conexion = ctk.CTkLabel(parent, text="Esperando sincronización...", text_color="#786f95")
+        self.lbl_estado_conexion.pack(anchor="w", padx=30)
+
+        # Resumen de funciones disponibles; no simula comprobaciones de servicio.
         info_frame = ctk.CTkFrame(parent, corner_radius=10)
         info_frame.pack(fill="both", expand=True, padx=30, pady=15)
         
-        ctk.CTkLabel(info_frame, text="🚀 Estado del Motor de Validación y Arquitectura", font=("Arial", 16, "bold")).pack(padx=20, pady=(15, 10), anchor="w")
-        ctk.CTkLabel(info_frame, text="• Algoritmo anti-cruces de horarios: ACTIVO", font=("Arial", 13), text_color="#15803d").pack(padx=20, pady=4, anchor="w")
-        ctk.CTkLabel(info_frame, text="• Sincronización con Supabase (Cloud DB): CONECTADO", font=("Arial", 13), text_color="#15803d").pack(padx=20, pady=4, anchor="w")
-        ctk.CTkLabel(info_frame, text="• Módulo de Autenticación y Sesión: ACTIVO", font=("Arial", 13), text_color="#15803d").pack(padx=20, pady=4, anchor="w")
-        ctk.CTkLabel(info_frame, text="• Vista de Horario Semanal (Grid / Matriz): OPERATIVO", font=("Arial", 13), text_color="#15803d").pack(padx=20, pady=4, anchor="w")
-        ctk.CTkLabel(info_frame, text="• Arquitectura Orientada a Objetos (POO): IMPLEMENTADA", font=("Arial", 13), text_color="#15803d").pack(padx=20, pady=(4, 15), anchor="w")
+        ctk.CTkLabel(info_frame, text="BeeWeek en resumen", font=("Arial", 16, "bold")).pack(padx=20, pady=(15, 10), anchor="w")
+        ctk.CTkLabel(info_frame, text="Consulta las clases de la semana en Calendario Semanal.", font=("Arial", 13), text_color="#4b3f76").pack(padx=20, pady=4, anchor="w")
+        ctk.CTkLabel(info_frame, text="Los horarios se validan al registrarlos o modificarlos.", font=("Arial", 13), text_color="#4b3f76").pack(padx=20, pady=4, anchor="w")
+        ctk.CTkLabel(info_frame, text="Los datos mostrados arriba provienen de Supabase.", font=("Arial", 13), text_color="#4b3f76").pack(padx=20, pady=(4, 15), anchor="w")
 
     def _crear_tarjeta(self, parent, titulo, color_valor):
         card = ctk.CTkFrame(parent, width=200, height=100, corner_radius=10)
@@ -247,9 +248,14 @@ class BeeWeekApp(ctk.CTk):
             res_horarios = self.db_client.table("horarios").select("*", count="exact").execute()
             total_horarios = res_horarios.count if res_horarios.count is not None else len(res_horarios.data)
             self.card_horarios_val.configure(text=str(total_horarios))
+            self.lbl_estado_conexion.configure(text="Datos actualizados desde Supabase.", text_color="#15803d")
         except Exception:
             self.card_aulas_val.configure(text="Err")
             self.card_horarios_val.configure(text="Err")
+            self.lbl_estado_conexion.configure(
+                text="No se pudieron cargar las métricas. Revisa la conexión y pulsa Actualizar datos.",
+                text_color="#b42333",
+            )
 
     def cambiar_vista(self, nombre_vista):
         if self.rol_actual != "Administrador" and nombre_vista not in ("dashboard", "calendario"):
