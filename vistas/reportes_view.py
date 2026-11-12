@@ -28,7 +28,7 @@ class ReportesView(ctk.CTkFrame):
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.header_frame.pack(fill="x", padx=30, pady=(20, 10))
         
-        self.lbl_titulo = ctk.CTkLabel(self.header_frame, text="📊 Reportes y Exportación de Datos", font=("Arial", 22, "bold"))
+        self.lbl_titulo = ctk.CTkLabel(self.header_frame, text="Reportes y Exportación de Datos", font=("Arial", 22, "bold"))
         self.lbl_titulo.pack(side="left")
 
         # Tarjeta de Filtros de Reporte
@@ -44,7 +44,7 @@ class ReportesView(ctk.CTkFrame):
         )
         self.combo_tipo.pack(side="left", padx=20, pady=(0, 20))
 
-        btn_generar = ctk.CTkButton(self.filter_frame, text="📄 Generar Vistas de Reporte", command=self.generar_reporte, fg_color="#7256ac")
+        btn_generar = ctk.CTkButton(self.filter_frame, text="Generar Vistas de Reporte", command=self.generar_reporte, fg_color="#7256ac")
         btn_generar.pack(side="left", padx=10, pady=(0, 20))
 
         self.btn_exportar = ctk.CTkButton(
@@ -54,10 +54,18 @@ class ReportesView(ctk.CTkFrame):
         self.btn_exportar.pack(side="left", padx=10, pady=(0, 20))
 
         # Consola de Previsualización del Reporte
-        self.preview_frame = ctk.CTkFrame(self, corner_radius=10)
+        self.preview_frame = ctk.CTkFrame(self, corner_radius=10, fg_color="#ffffff")
         self.preview_frame.pack(fill="both", expand=True, padx=30, pady=10)
 
-        self.txt_reporte = ctk.CTkTextbox(self.preview_frame, font=("Courier", 11))
+        self.lbl_resumen = ctk.CTkLabel(
+            self.preview_frame, text="Elige un reporte y pulsa Generar.",
+            font=("Arial", 13, "bold"), text_color="#4b3f76",
+        )
+        self.lbl_resumen.pack(anchor="w", padx=18, pady=(14, 0))
+        self.txt_reporte = ctk.CTkTextbox(
+            self.preview_frame, font=("Consolas", 12), fg_color="#ffffff",
+            text_color="#4b3f76", border_width=1, border_color="#e8e1fb",
+        )
         self.txt_reporte.pack(fill="both", expand=True, padx=15, pady=15)
 
     def _invalidar_reporte(self):
@@ -65,6 +73,7 @@ class ReportesView(ctk.CTkFrame):
         self.csv_columnas = []
         self.csv_filas = []
         self.btn_exportar.configure(state="disabled")
+        self.lbl_resumen.configure(text="Reporte pendiente de actualizar.", text_color="#786f95")
         self.txt_reporte.delete("0.0", "end")
         self.txt_reporte.insert("end", "Pulsa Generar Vistas de Reporte para actualizar los datos.")
 
@@ -74,12 +83,11 @@ class ReportesView(ctk.CTkFrame):
         self.csv_columnas = []
         self.csv_filas = []
         self.btn_exportar.configure(state="disabled")
+        self.lbl_resumen.configure(text="Preparando reporte...", text_color="#786f95")
         
-        encabezado = "=========================================================================================================\n"
-        encabezado += "                           UNIVERSIDAD LAICA ELOY ALFARO DE MANABÍ (ULEAM)\n"
-        encabezado += "                                 SISTEMA BEEWEEK - REPORTE OFICIAL\n"
-        encabezado += f" Tipo de Reporte: {tipo}\n"
-        encabezado += "=========================================================================================================\n\n"
+        encabezado = f"BeeWeek · {tipo}\n"
+        encabezado += "Universidad Laica Eloy Alfaro de Manabí (ULEAM)\n"
+        encabezado += "─" * 78 + "\n\n"
         self.txt_reporte.insert("end", encabezado)
 
         try:
@@ -124,13 +132,19 @@ class ReportesView(ctk.CTkFrame):
                     ])
             if self.csv_filas:
                 self.btn_exportar.configure(state="normal")
+                self.lbl_resumen.configure(
+                    text=f"{tipo} · {len(self.csv_filas)} registro(s) listos para exportar.",
+                    text_color="#15803d",
+                )
             else:
                 self.txt_reporte.insert("end", "\nNo hay registros para este reporte.")
+                self.lbl_resumen.configure(text=f"{tipo} · sin registros.", text_color="#786f95")
         except Exception as e:
             self.csv_columnas = []
             self.csv_filas = []
             self.txt_reporte.delete("0.0", "end")
             self.txt_reporte.insert("end", f"No se pudo generar el reporte: {e}")
+            self.lbl_resumen.configure(text="No se pudo generar el reporte.", text_color="#b42333")
 
     def exportar_csv(self):
         if not self.csv_columnas:

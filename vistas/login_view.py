@@ -539,7 +539,7 @@ class LoginView(ctk.CTkFrame):
 
         if not usuario or not contrasena:
             self.lbl_mensaje.configure(
-                text="⚠️ Por favor completa todos los campos.",
+                text="Por favor completa todos los campos.",
                 text_color="#d97706"
             )
             return
@@ -559,7 +559,7 @@ class LoginView(ctk.CTkFrame):
 
             if exito:
                 self.lbl_mensaje.configure(
-                    text=f"✅ {mensaje}",
+                    text=f"{mensaje}",
                     text_color="#16a34a"
                 )
                 self.after(
@@ -568,13 +568,13 @@ class LoginView(ctk.CTkFrame):
                 )
             else:
                 self.lbl_mensaje.configure(
-                    text=f"❌ {mensaje}",
+                    text=f"{mensaje}",
                     text_color="#dc2626"
                 )
 
         except Exception:
             self.lbl_mensaje.configure(
-                text="❌ Ocurrió un error al iniciar sesión.",
+                text="Ocurrió un error al iniciar sesión.",
                 text_color="#dc2626"
             )
         finally:
@@ -596,14 +596,14 @@ class LoginView(ctk.CTkFrame):
             email, username, contrasena
         ]):
             self.lbl_mensaje_reg.configure(
-                text="⚠️ Completa todos los campos obligatorios.",
+                text="Completa todos los campos obligatorios.",
                 text_color="#d97706"
             )
             return
 
         if not cedula.isdigit() or len(cedula) != 10:
             self.lbl_mensaje_reg.configure(
-                text="⚠️ La cédula debe contener 10 dígitos.",
+                text="La cédula debe contener 10 dígitos.",
                 text_color="#d97706"
             )
             self.reg_cedula.focus()
@@ -614,7 +614,7 @@ class LoginView(ctk.CTkFrame):
             email
         ):
             self.lbl_mensaje_reg.configure(
-                text="⚠️ Ingresa un correo electrónico válido.",
+                text="Ingresa un correo electrónico válido.",
                 text_color="#d97706"
             )
             self.reg_email.focus()
@@ -622,7 +622,7 @@ class LoginView(ctk.CTkFrame):
 
         if not email.lower().endswith("@uleam.edu.ec"):
             self.lbl_mensaje_reg.configure(
-                text="⚠️ Utiliza tu correo institucional @uleam.edu.ec.",
+                text="Utiliza tu correo institucional @uleam.edu.ec.",
                 text_color="#d97706"
             )
             self.reg_email.focus()
@@ -630,7 +630,7 @@ class LoginView(ctk.CTkFrame):
 
         if len(contrasena) < 8:
             self.lbl_mensaje_reg.configure(
-                text="⚠️ La contraseña debe tener al menos 8 caracteres.",
+                text="La contraseña debe tener al menos 8 caracteres.",
                 text_color="#d97706"
             )
             self.reg_pass.focus()
@@ -638,7 +638,7 @@ class LoginView(ctk.CTkFrame):
 
         if len(username) < 4:
             self.lbl_mensaje_reg.configure(
-                text="⚠️ El usuario debe tener al menos 4 caracteres.",
+                text="El usuario debe tener al menos 4 caracteres.",
                 text_color="#d97706"
             )
             self.reg_user.focus()
@@ -663,7 +663,7 @@ class LoginView(ctk.CTkFrame):
 
             if exito:
                 self.lbl_mensaje_reg.configure(
-                    text=f"✅ {mensaje}",
+                    text=f"{mensaje}",
                     text_color="#16a34a"
                 )
                 self.after(
@@ -672,13 +672,13 @@ class LoginView(ctk.CTkFrame):
                 )
             else:
                 self.lbl_mensaje_reg.configure(
-                    text=f"❌ {mensaje}",
+                    text=f"{mensaje}",
                     text_color="#dc2626"
                 )
 
         except Exception:
             self.lbl_mensaje_reg.configure(
-                text="❌ Ocurrió un error al registrar el usuario.",
+                text="Ocurrió un error al registrar el usuario.",
                 text_color="#dc2626"
             )
         finally:
@@ -692,6 +692,6 @@ class LoginView(ctk.CTkFrame):
         self.entry_usuario.insert(0, username)
         self.entry_password.focus()
         self.lbl_mensaje.configure(
-            text="✅ Registro completado. Ingresa tu contraseña para acceder.",
+            text="Registro completado. Ingresa tu contraseña para acceder.",
             text_color="#16a34a"
         )

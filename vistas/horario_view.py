@@ -26,14 +26,14 @@ class HorarioView(ctk.CTkFrame):
         
         self.titulo = ctk.CTkLabel(
             self.header_frame, 
-            text="⚡ Gestión y Validación de Horarios", 
+            text="Gestión y Validación de Horarios",
             font=("Arial", 22, "bold")
         )
         self.titulo.pack(side="left")
 
         self.btn_recargar = ctk.CTkButton(
             self.header_frame,
-            text="🔄 Actualizar Opciones",
+            text="Actualizar Opciones",
             width=160,
             fg_color="#7256ac",
             hover_color="#5e4497",
@@ -54,6 +54,10 @@ class HorarioView(ctk.CTkFrame):
         # ==========================================
         self.form_card = ctk.CTkFrame(self.scroll_container, corner_radius=12, fg_color="#ffffff")
         self.form_card.pack(fill="x", pady=(0, 15), padx=5)
+        ctk.CTkLabel(
+            self.form_card, text="Nuevo horario", font=("Arial", 16, "bold"),
+            text_color="#4b3f76",
+        ).grid(row=0, column=0, columnspan=2, padx=20, pady=(15, 0), sticky="w")
 
         # Configuración de 2 columnas proporcionales
         self.form_card.grid_columnconfigure(0, weight=1)
@@ -61,10 +65,10 @@ class HorarioView(ctk.CTkFrame):
 
         # --- COLUMNA IZQUIERDA: Tiempo y Capacidad ---
         self.col_left = ctk.CTkFrame(self.form_card, fg_color="transparent")
-        self.col_left.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        self.col_left.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
 
         # Día
-        ctk.CTkLabel(self.col_left, text="📅 Día de la Semana:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(self.col_left, text="Día de la Semana:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
         self.combo_dia = ctk.CTkComboBox(
             self.col_left,
             values=["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"],
@@ -75,7 +79,7 @@ class HorarioView(ctk.CTkFrame):
         self.combo_dia.pack(fill="x", pady=(0, 12))
 
         # Hora Inicio
-        ctk.CTkLabel(self.col_left, text="⏰ Hora de Inicio:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(self.col_left, text="Hora de Inicio:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
         self.combo_h_inicio = ctk.CTkComboBox(
             self.col_left, 
             values=["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"],
@@ -85,7 +89,7 @@ class HorarioView(ctk.CTkFrame):
         self.combo_h_inicio.pack(fill="x", pady=(0, 12))
 
         # Hora Fin
-        ctk.CTkLabel(self.col_left, text="⏳ Hora de Fin:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(self.col_left, text="Hora de Fin:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
         self.combo_h_fin = ctk.CTkComboBox(
             self.col_left,
             values=["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"],
@@ -95,7 +99,7 @@ class HorarioView(ctk.CTkFrame):
         self.combo_h_fin.pack(fill="x", pady=(0, 12))
 
         # Número de Estudiantes
-        ctk.CTkLabel(self.col_left, text="👥 Estudiantes en el Curso (Aforo):", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(self.col_left, text="Estudiantes en el Curso (Aforo):", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
         self.entry_estudiantes = ctk.CTkEntry(
             self.col_left,
             placeholder_text="Selecciona un curso",
@@ -107,7 +111,7 @@ class HorarioView(ctk.CTkFrame):
         # Indicador de aforo
         self.lbl_info_aforo = ctk.CTkLabel(
             self.col_left,
-            text="ℹ️ Capacidad estimada: Pendiente de seleccionar aula",
+            text="Capacidad estimada: Pendiente de seleccionar aula",
             font=("Arial", 11),
             text_color="#786f95"
         )
@@ -115,10 +119,10 @@ class HorarioView(ctk.CTkFrame):
 
         # --- COLUMNA DERECHA: Asignación Académica ---
         self.col_right = ctk.CTkFrame(self.form_card, fg_color="transparent")
-        self.col_right.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+        self.col_right.grid(row=1, column=1, padx=20, pady=20, sticky="nsew")
 
         # Docente
-        ctk.CTkLabel(self.col_right, text="👨‍🏫 Docente:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(self.col_right, text="Docente:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
         self.combo_docente = ctk.CTkComboBox(
             self.col_right,
             values=["Cargando docentes..."],
@@ -127,7 +131,7 @@ class HorarioView(ctk.CTkFrame):
         self.combo_docente.pack(fill="x", pady=(0, 12))
 
         # Aula
-        ctk.CTkLabel(self.col_right, text="🏢 Aula Asignada:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(self.col_right, text="Aula Asignada:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
         self.combo_aula = ctk.CTkComboBox(
             self.col_right,
             values=["Cargando aulas..."],
@@ -137,7 +141,7 @@ class HorarioView(ctk.CTkFrame):
         self.combo_aula.pack(fill="x", pady=(0, 12))
 
         # Materia
-        ctk.CTkLabel(self.col_right, text="📚 Materia / Asignatura:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(self.col_right, text="Materia / Asignatura:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
         self.combo_materia = ctk.CTkComboBox(
             self.col_right,
             values=["Cargando materias..."],
@@ -146,7 +150,7 @@ class HorarioView(ctk.CTkFrame):
         self.combo_materia.pack(fill="x", pady=(0, 12))
 
         # Curso
-        ctk.CTkLabel(self.col_right, text="🎓 Curso / Paralelo:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(self.col_right, text="Curso / Paralelo:", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 4))
         self.combo_curso = ctk.CTkComboBox(
             self.col_right,
             values=["Cargando cursos..."],
@@ -157,11 +161,11 @@ class HorarioView(ctk.CTkFrame):
 
         # --- PIE DEL FORMULARIO: Botón y Notificación ---
         self.action_frame = ctk.CTkFrame(self.form_card, fg_color="transparent")
-        self.action_frame.grid(row=1, column=0, columnspan=2, padx=20, pady=(0, 20), sticky="ew")
+        self.action_frame.grid(row=2, column=0, columnspan=2, padx=20, pady=(0, 20), sticky="ew")
 
         self.btn_crear = ctk.CTkButton(
             self.action_frame, 
-            text="✨ Validar y Registrar Horario", 
+            text="Validar y Registrar Horario",
             font=("Arial", 14, "bold"),
             fg_color="#7256ac",
             hover_color="#5e4497",
@@ -170,23 +174,37 @@ class HorarioView(ctk.CTkFrame):
         )
         self.btn_crear.pack(fill="x", pady=(5, 5))
 
+        self.edit_card = ctk.CTkFrame(self.scroll_container, corner_radius=12, fg_color="#ffffff")
+        self.edit_card.pack(fill="x", pady=(0, 12), padx=5)
+        ctk.CTkLabel(
+            self.edit_card, text="Editar o eliminar un horario", font=("Arial", 16, "bold"),
+            text_color="#4b3f76",
+        ).pack(anchor="w", padx=20, pady=(15, 3))
+        ctk.CTkLabel(
+            self.edit_card, text="Selecciona uno para cargar sus datos en el formulario de arriba.",
+            text_color="#786f95", font=("Arial", 12),
+        ).pack(anchor="w", padx=20, pady=(0, 8))
         self.combo_horario = ctk.CTkOptionMenu(
-            self.action_frame,
+            self.edit_card,
             values=["Selecciona un horario para editar o eliminar"],
             command=self.seleccionar_horario,
             fg_color="#7256ac",
         )
-        self.combo_horario.pack(fill="x", pady=(12, 5))
+        self.combo_horario.pack(fill="x", padx=20, pady=(0, 8))
         self.combo_horario.set("Selecciona un horario para editar o eliminar")
-        botones_edicion = ctk.CTkFrame(self.action_frame, fg_color="transparent")
-        botones_edicion.pack(fill="x", pady=(0, 5))
+        botones_edicion = ctk.CTkFrame(self.edit_card, fg_color="transparent")
+        botones_edicion.pack(fill="x", padx=20, pady=(0, 15))
         ctk.CTkButton(botones_edicion, text="Guardar cambios", command=self.actualizar_horario,
                       fg_color="#7256ac").pack(side="left", padx=(0, 8))
         ctk.CTkButton(botones_edicion, text="Eliminar horario", command=self.eliminar_horario,
                       fg_color="#b42333", hover_color="#8b1c2a").pack(side="left")
+        ctk.CTkButton(
+            botones_edicion, text="Dejar de editar", command=self.dejar_de_editar,
+            fg_color="#eee9fb", hover_color="#d6c9f3", text_color="#4b3f76",
+        ).pack(side="left", padx=(8, 0))
         
-        self.lbl_mensaje = ctk.CTkLabel(self.action_frame, text="", font=("Arial", 12, "bold"))
-        self.lbl_mensaje.pack(pady=4)
+        self.lbl_mensaje = ctk.CTkLabel(self.scroll_container, text="", font=("Arial", 12, "bold"))
+        self.lbl_mensaje.pack(pady=(0, 8))
 
         # ==========================================
         # 3. LISTADO DE HORARIOS EXISTENTES
@@ -196,7 +214,7 @@ class HorarioView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             self.tabla_frame,
-            text="📋 Horarios Registrados en el Sistema",
+            text="Horarios Registrados en el Sistema",
             font=("Arial", 15, "bold")
         ).pack(anchor="w", padx=20, pady=(15, 5))
 
@@ -216,12 +234,12 @@ class HorarioView(ctk.CTkFrame):
         if aula_info and "capacidad" in aula_info:
             cap = aula_info["capacidad"]
             self.lbl_info_aforo.configure(
-                text=f"✅ Capacidad máxima del aula: {cap} estudiantes",
+                text=f"Capacidad máxima del aula: {cap} estudiantes",
                 text_color="#15803d"
             )
         else:
             self.lbl_info_aforo.configure(
-                text="ℹ️ Selecciona un aula registrada para conocer su capacidad",
+                text="Selecciona un aula registrada para conocer su capacidad",
                 text_color="#786f95"
             )
 
@@ -341,11 +359,11 @@ class HorarioView(ctk.CTkFrame):
             )
         elif faltantes:
             self.lbl_mensaje.configure(
-                text="⚠️ Faltan datos reales: " + ", ".join(faltantes) + ".",
+                text="Faltan datos reales: " + ", ".join(faltantes) + ".",
                 text_color="orange"
             )
         else:
-            self.lbl_mensaje.configure(text="✅ Datos sincronizados correctamente.", text_color="#15803d")
+            self.lbl_mensaje.configure(text="Datos sincronizados correctamente.", text_color="#15803d")
 
     def refrescar_historial_horarios(self):
         """Muestra los horarios ya registrados en la base de datos con nombres legibles"""
@@ -417,6 +435,7 @@ class HorarioView(ctk.CTkFrame):
         horario = self.horarios_map.get(opcion)
         if not horario:
             return
+        self.btn_crear.configure(state="disabled")
         self.combo_dia.set(str(horario.get("dia", "Lunes")))
         self.combo_h_inicio.set(str(horario.get("hora_inicio", ""))[:5])
         self.combo_h_fin.set(str(horario.get("hora_fin", ""))[:5])
@@ -431,6 +450,26 @@ class HorarioView(ctk.CTkFrame):
                 combo.set(etiqueta)
         self.al_seleccionar_aula(self.combo_aula.get())
         self.al_seleccionar_curso(self.combo_curso.get())
+
+    def dejar_de_editar(self):
+        self.combo_horario.set("Selecciona un horario para editar o eliminar")
+        self.combo_dia.set("Lunes")
+        self.combo_h_inicio.set("08:00")
+        self.combo_h_fin.set("10:00")
+        for combo, mapa in (
+            (self.combo_docente, self.docentes_map),
+            (self.combo_aula, self.aulas_map),
+            (self.combo_materia, self.materias_map),
+            (self.combo_curso, self.cursos_map),
+        ):
+            if mapa:
+                combo.set(next(iter(mapa)))
+        self.al_seleccionar_aula(self.combo_aula.get())
+        self.al_seleccionar_curso(self.combo_curso.get())
+        self.btn_crear.configure(state="normal" if all((
+            self.docentes_map, self.aulas_map, self.materias_map, self.cursos_map
+        )) else "disabled")
+        self.lbl_mensaje.configure(text="Listo para registrar un horario nuevo.", text_color="#7256ac")
 
     def _datos_formulario(self):
         datos = {
@@ -448,31 +487,31 @@ class HorarioView(ctk.CTkFrame):
 
     def _mostrar_resultado_horario(self, exito, mensaje):
         if not exito:
-            self.lbl_mensaje.configure(text=f"❌ {mensaje}", text_color="#b42333")
+            self.lbl_mensaje.configure(text=f"{mensaje}", text_color="#b42333")
         elif self.refrescar_historial_horarios():
-            self.lbl_mensaje.configure(text=f"✅ {mensaje}", text_color="#15803d")
+            self.lbl_mensaje.configure(text=f"{mensaje}", text_color="#15803d")
         else:
             self.lbl_mensaje.configure(
-                text=f"✅ {mensaje} No se pudo actualizar el historial; pulsa Actualizar Opciones.",
+                text=f"{mensaje} No se pudo actualizar el historial; pulsa Actualizar Opciones.",
                 text_color="#9a6700",
             )
 
     def actualizar_horario(self):
         horario = self.horarios_map.get(self.combo_horario.get())
         if not horario:
-            self.lbl_mensaje.configure(text="⚠️ Selecciona un horario.", text_color="orange")
+            self.lbl_mensaje.configure(text="Selecciona un horario.", text_color="orange")
             return
         try:
             exito, mensaje = self.horario_controller.actualizar_horario(
                 int(horario["id"]), **self._datos_formulario())
             self._mostrar_resultado_horario(exito, mensaje)
         except Exception as error:
-            self.lbl_mensaje.configure(text=f"❌ No se pudo actualizar: {error}", text_color="#b42333")
+            self.lbl_mensaje.configure(text=f"No se pudo actualizar: {error}", text_color="#b42333")
 
     def eliminar_horario(self):
         horario = self.horarios_map.get(self.combo_horario.get())
         if not horario:
-            self.lbl_mensaje.configure(text="⚠️ Selecciona un horario.", text_color="orange")
+            self.lbl_mensaje.configure(text="Selecciona un horario.", text_color="orange")
             return
         if not messagebox.askyesno("Eliminar horario", "¿Eliminar el horario seleccionado?", parent=self):
             return
@@ -480,7 +519,7 @@ class HorarioView(ctk.CTkFrame):
             exito, mensaje = self.horario_controller.eliminar_horario(int(horario["id"]))
             self._mostrar_resultado_horario(exito, mensaje)
         except Exception as error:
-            self.lbl_mensaje.configure(text=f"❌ No se pudo eliminar: {error}", text_color="#b42333")
+            self.lbl_mensaje.configure(text=f"No se pudo eliminar: {error}", text_color="#b42333")
 
     def crear_horario(self):
         dia = self.combo_dia.get()
@@ -493,7 +532,7 @@ class HorarioView(ctk.CTkFrame):
         str_estudiantes = self.entry_estudiantes.get().strip()
 
         if not all([dia, h_inicio, h_fin, sel_docente, sel_aula, sel_materia, sel_curso, str_estudiantes]):
-            self.lbl_mensaje.configure(text="⚠️ Por favor completa todos los campos del horario.", text_color="orange")
+            self.lbl_mensaje.configure(text="Por favor completa todos los campos del horario.", text_color="orange")
             return
 
         docente_id = self._resolver_id(sel_docente, self.docentes_map)
@@ -502,16 +541,16 @@ class HorarioView(ctk.CTkFrame):
         curso_id = self._resolver_id(sel_curso, self.cursos_map)
 
         if docente_id is None:
-            self.lbl_mensaje.configure(text="⚠️ No se pudo determinar el ID del docente seleccionado.", text_color="red")
+            self.lbl_mensaje.configure(text="No se pudo determinar el ID del docente seleccionado.", text_color="red")
             return
         if aula_id is None:
-            self.lbl_mensaje.configure(text="⚠️ No se pudo determinar el ID del aula seleccionada.", text_color="red")
+            self.lbl_mensaje.configure(text="No se pudo determinar el ID del aula seleccionada.", text_color="red")
             return
         if materia_id is None:
-            self.lbl_mensaje.configure(text="⚠️ No se pudo determinar el ID de la materia seleccionada.", text_color="red")
+            self.lbl_mensaje.configure(text="No se pudo determinar el ID de la materia seleccionada.", text_color="red")
             return
         if curso_id is None:
-            self.lbl_mensaje.configure(text="⚠️ No se pudo determinar el ID del curso seleccionado.", text_color="red")
+            self.lbl_mensaje.configure(text="No se pudo determinar el ID del curso seleccionado.", text_color="red")
             return
 
         try:
@@ -528,4 +567,4 @@ class HorarioView(ctk.CTkFrame):
 
             self._mostrar_resultado_horario(exito, mensaje)
         except Exception as e:
-            self.lbl_mensaje.configure(text=f"❌ Error al procesar el horario: {e}", text_color="#b42333")
+            self.lbl_mensaje.configure(text=f"Error al procesar el horario: {e}", text_color="#b42333")

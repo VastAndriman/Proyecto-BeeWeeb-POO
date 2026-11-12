@@ -6,6 +6,37 @@ from vistas.calendario_view import CalendarioView
 
 
 class CalendarioTests(unittest.TestCase):
+    def test_filtrar_curso_usa_datos_ya_cargados(self):
+        controller = Mock()
+        calendario = SimpleNamespace(
+            lbl_estado=Mock(), grid_container=Mock(), dias=["Lunes"],
+            bloques=["07:00 - 08:00"], horario_controller=controller,
+            normalizar_dia=lambda dia: dia,
+            filas_para_intervalo=CalendarioView.filas_para_intervalo,
+            combo_filtro_curso=Mock(), combo_filtro_docente=Mock(),
+            filtro_cursos={"Paralelo A": "1"}, filtro_docentes={},
+            _cache_calendario=(
+                {"1": "POO"}, {"1": "101"}, {"1": "Ana"}, {"1": "Paralelo A"},
+                [
+                    {"dia": "Lunes", "hora_inicio": "07:00", "hora_fin": "08:00",
+                     "materia_id": 1, "aula_id": 1, "docente_id": 1, "curso_id": 1},
+                    {"dia": "Lunes", "hora_inicio": "07:00", "hora_fin": "08:00",
+                     "materia_id": 1, "aula_id": 2, "docente_id": 2, "curso_id": 2},
+                ],
+            ),
+        )
+        calendario.combo_filtro_curso.get.return_value = "Paralelo A"
+        calendario.combo_filtro_docente.get.return_value = "Todos los docentes"
+        calendario.grid_container.winfo_children.return_value = []
+
+        with patch("vistas.calendario_view.ctk.CTkLabel"), patch(
+            "vistas.calendario_view.ctk.CTkFrame"
+        ) as frame:
+            CalendarioView.cargar_horarios(calendario, sincronizar=False)
+
+        self.assertEqual(frame.call_count, 2)  # celda base y una clase visible
+        controller.obtener_horarios_registrados.assert_not_called()
+
     def test_avisa_si_un_horario_queda_fuera_de_la_grilla(self):
         controller = Mock()
         controller.obtener_materias.return_value = []

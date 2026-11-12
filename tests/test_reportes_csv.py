@@ -17,7 +17,7 @@ class ReporteCsvTests(unittest.TestCase):
         controller.obtener_cursos.return_value = []
         controller.obtener_horarios_registrados.return_value = []
         vista = SimpleNamespace(
-            horario_controller=controller, combo_tipo=Mock(), txt_reporte=Mock(),
+            horario_controller=controller, combo_tipo=Mock(), txt_reporte=Mock(), lbl_resumen=Mock(),
             btn_exportar=Mock(), csv_columnas=[], csv_filas=[],
         )
         vista.combo_tipo.get.return_value = "Horarios Registrados"
@@ -33,7 +33,7 @@ class ReporteCsvTests(unittest.TestCase):
     def test_cambiar_tipo_invalida_reporte_anterior(self):
         vista = SimpleNamespace(
             csv_columnas=["Día"], csv_filas=[["Lunes"]],
-            btn_exportar=Mock(), txt_reporte=Mock(),
+            btn_exportar=Mock(), txt_reporte=Mock(), lbl_resumen=Mock(),
         )
 
         ReportesView._invalidar_reporte(vista)
@@ -54,7 +54,7 @@ class ReporteCsvTests(unittest.TestCase):
         }]
         vista = SimpleNamespace(
             horario_controller=controller, combo_tipo=Mock(),
-            txt_reporte=Mock(), btn_exportar=Mock(),
+            txt_reporte=Mock(), btn_exportar=Mock(), lbl_resumen=Mock(),
             csv_columnas=[], csv_filas=[],
         )
         vista.combo_tipo.get.return_value = "Horarios Registrados"

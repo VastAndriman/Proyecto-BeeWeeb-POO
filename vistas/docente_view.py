@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from conexion.supabase_client import SupabaseConnection
+from componentes.tabla_busqueda import TablaBusqueda
 from patrones_creacionales_beeweek import CreadorDocente
 
 class DocenteView(ctk.CTkFrame):
@@ -12,10 +13,10 @@ class DocenteView(ctk.CTkFrame):
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.header_frame.pack(fill="x", padx=30, pady=(20, 10))
         
-        self.titulo = ctk.CTkLabel(self.header_frame, text="👨‍🏫 Gestión de Docentes", font=("Arial", 22, "bold"))
+        self.titulo = ctk.CTkLabel(self.header_frame, text="Gestión de Docentes", font=("Arial", 22, "bold"))
         self.titulo.pack(side="left")
         
-        btn_refrescar = ctk.CTkButton(self.header_frame, text="🔄 Sincronizar Lista", command=self.cargar_docentes, fg_color="#7256ac", width=150)
+        btn_refrescar = ctk.CTkButton(self.header_frame, text="Sincronizar Lista", command=self.cargar_docentes, fg_color="#7256ac", width=150)
         btn_refrescar.pack(side="right")
 
         # Contenedor principal de dos columnas
@@ -46,7 +47,7 @@ class DocenteView(ctk.CTkFrame):
         self.entry_especialidad.pack(pady=8, padx=20)
         
         # Botón para guardar
-        self.btn_guardar = ctk.CTkButton(self.form_frame, text="💾 Guardar en Supabase", command=self.guardar_docente, fg_color="#7256ac", width=260)
+        self.btn_guardar = ctk.CTkButton(self.form_frame, text="Guardar en Supabase", command=self.guardar_docente, fg_color="#7256ac", width=260)
         self.btn_guardar.pack(pady=15, padx=20)
         
         # Etiqueta de mensajes
@@ -59,8 +60,13 @@ class DocenteView(ctk.CTkFrame):
         self.list_frame = ctk.CTkFrame(self.main_container, corner_radius=10)
         self.list_frame.pack(side="right", fill="both", expand=True, padx=0, pady=0)
 
-        self.textbox = ctk.CTkTextbox(self.list_frame, font=("Courier", 11))
-        self.textbox.pack(fill="both", expand=True, padx=15, pady=15)
+        self.tabla = TablaBusqueda(
+            self.list_frame,
+            (("identificacion", "Identificación", 120),
+             ("nombre_completo", "Docente", 200),
+             ("especialidad", "Especialidad", 170)),
+        )
+        self.tabla.pack(fill="both", expand=True, padx=15, pady=15)
 
         # Carga inicial de datos desde Supabase
         self.cargar_docentes()
@@ -105,28 +111,21 @@ class DocenteView(ctk.CTkFrame):
             self.lbl_mensaje.configure(text=f"Error al guardar: {e}", text_color="#b42333")
 
     def cargar_docentes(self):
-        self.textbox.delete("0.0", "end")
+        self.tabla.set_rows([])
         try:
             client = self.db
             res = client.table("docentes").select("*").execute()
             data = res.data if res.data else []
-            
-            encabezado = f"{'CÉDULA':<12} | {'NOMBRE Y APELLIDO':<25} | {'ESPECIALIDAD':<18}\n"
-            encabezado += "=" * 62 + "\n"
-            self.textbox.insert("end", encabezado)
-            
-            if not data:
-                self.textbox.insert("end", "No hay docentes registrados aún en Supabase.\n")
-                
-            for item in data:
-                ced = str(item.get('identificacion', item.get('id', 'N/A')))
-                nom = f"{item.get('nombre', '')} {item.get('apellido', '')}".strip()
-                esp = str(item.get('especialidad', 'General'))
-                
-                linea = f"{ced:<12} | {nom:<25} | {esp:<18}\n"
-                self.textbox.insert("end", linea)
+            self.tabla.set_rows([
+                {
+                    "identificacion": item.get("identificacion") or item.get("id", ""),
+                    "nombre_completo": f"{item.get('nombre', '')} {item.get('apellido', '')}".strip(),
+                    "especialidad": item.get("especialidad") or "General",
+                }
+                for item in data
+            ])
             return True
                 
         except Exception as e:
-            self.textbox.insert("end", f"Error al consultar Supabase: {e}")
+            self.tabla.set_error(f"No se pudo cargar la lista de docentes: {e}")
             return False

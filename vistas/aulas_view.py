@@ -3,6 +3,7 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from conexion.supabase_client import SupabaseConnection
+from componentes.tabla_busqueda import TablaBusqueda
 
 
 class AulasView(ctk.CTkFrame):
@@ -44,9 +45,21 @@ class AulasView(ctk.CTkFrame):
         self.mensaje.pack(anchor="w", padx=25)
         ctk.CTkButton(self, text="Actualizar lista", command=self.cargar_aulas,
                       fg_color="#7256ac").pack(anchor="w", padx=25, pady=(4, 8))
-        self.textbox = ctk.CTkTextbox(self, font=("Courier", 12))
-        self.textbox.pack(fill="both", expand=True, padx=25, pady=(0, 20))
+        self.tabla = TablaBusqueda(
+            self,
+            (("id", "ID", 70), ("numero", "Número", 120),
+             ("capacidad", "Capacidad", 120), ("tipo", "Tipo", 190)),
+            on_select=self._seleccionar_fila,
+        )
+        self.tabla.pack(fill="both", expand=True, padx=25, pady=(0, 20))
         self.cargar_aulas()
+
+    def _seleccionar_fila(self, aula):
+        for etiqueta, registro in self.aulas_por_opcion.items():
+            if str(registro["id"]) == str(aula["id"]):
+                self.selector.set(etiqueta)
+                self._seleccionar_aula(etiqueta)
+                break
 
     def _seleccionar_aula(self, opcion):
         aula = self.aulas_por_opcion.get(opcion)
@@ -81,10 +94,10 @@ class AulasView(ctk.CTkFrame):
             detalle = "Ya existe un aula con ese número."
         elif "23503" in detalle:
             detalle = "Esta aula está usada por un horario; elimina o cambia ese horario primero."
-        self.mensaje.configure(text=f"❌ {detalle}", text_color="#b42333")
+        self.mensaje.configure(text=f"{detalle}", text_color="#b42333")
 
     def cargar_aulas(self):
-        self.textbox.delete("0.0", "end")
+        self.tabla.set_rows([])
         self.aulas_por_opcion = {}
         self.selector.configure(values=["Selecciona un aula"])
         self.selector.set("Selecciona un aula")
@@ -95,15 +108,10 @@ class AulasView(ctk.CTkFrame):
             }
             self.selector.configure(values=list(self.aulas_por_opcion) or ["Selecciona un aula"])
             self.selector.set("Selecciona un aula")
-            if not aulas:
-                self.textbox.insert("0.0", "No hay aulas registradas todavía.")
-                return True
-            lineas = [f"{'ID':<5} | {'NÚMERO':<10} | {'CAPACIDAD':<10} | {'TIPO':<15}", "-" * 50]
-            lineas.extend(f"{a['id']:<5} | {a['numero']:<10} | {a['capacidad']:<10} | {a['tipo']:<15}"
-                          for a in aulas)
-            self.textbox.insert("0.0", "\n".join(lineas))
+            self.tabla.set_rows(aulas)
             return True
         except Exception as error:
+            self.tabla.set_error("No se pudo cargar la lista de aulas.")
             self._mostrar_error(error)
             return False
 
@@ -111,10 +119,10 @@ class AulasView(ctk.CTkFrame):
         try:
             self.db.table("aulas").insert(self._datos_formulario()).execute()
             if self.cargar_aulas():
-                self.mensaje.configure(text="✅ Aula añadida.", text_color="#15803d")
+                self.mensaje.configure(text="Aula añadida.", text_color="#15803d")
             else:
                 self.mensaje.configure(
-                    text="✅ Aula añadida, pero no se pudo actualizar la lista. Pulsa Actualizar lista.",
+                    text="Aula añadida, pero no se pudo actualizar la lista. Pulsa Actualizar lista.",
                     text_color="#9a6700",
                 )
         except Exception as error:
@@ -125,10 +133,10 @@ class AulasView(ctk.CTkFrame):
             aula_id = self._id_seleccionado()
             self.db.table("aulas").update(self._datos_formulario()).eq("id", aula_id).execute()
             if self.cargar_aulas():
-                self.mensaje.configure(text="✅ Aula actualizada.", text_color="#15803d")
+                self.mensaje.configure(text="Aula actualizada.", text_color="#15803d")
             else:
                 self.mensaje.configure(
-                    text="✅ Aula actualizada, pero no se pudo actualizar la lista. Pulsa Actualizar lista.",
+                    text="Aula actualizada, pero no se pudo actualizar la lista. Pulsa Actualizar lista.",
                     text_color="#9a6700",
                 )
         except Exception as error:
@@ -141,10 +149,10 @@ class AulasView(ctk.CTkFrame):
                 return
             self.db.table("aulas").delete().eq("id", aula_id).execute()
             if self.cargar_aulas():
-                self.mensaje.configure(text="✅ Aula eliminada.", text_color="#15803d")
+                self.mensaje.configure(text="Aula eliminada.", text_color="#15803d")
             else:
                 self.mensaje.configure(
-                    text="✅ Aula eliminada, pero no se pudo actualizar la lista. Pulsa Actualizar lista.",
+                    text="Aula eliminada, pero no se pudo actualizar la lista. Pulsa Actualizar lista.",
                     text_color="#9a6700",
                 )
         except Exception as error:

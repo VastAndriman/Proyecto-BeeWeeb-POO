@@ -6,6 +6,21 @@ from vistas.horario_view import HorarioView
 
 
 class HorarioViewTests(unittest.TestCase):
+    def test_dejar_de_editar_habilita_crear_con_opciones_completas(self):
+        vista = SimpleNamespace(
+            combo_horario=Mock(), combo_dia=Mock(), combo_h_inicio=Mock(),
+            combo_h_fin=Mock(), combo_docente=Mock(), combo_aula=Mock(),
+            combo_materia=Mock(), combo_curso=Mock(), btn_crear=Mock(),
+            lbl_mensaje=Mock(), al_seleccionar_aula=Mock(), al_seleccionar_curso=Mock(),
+            docentes_map={"Ana": 1}, aulas_map={"Aula 101": {"id": 2}},
+            materias_map={"POO": 3}, cursos_map={"Paralelo A": {"id": 4}},
+        )
+
+        HorarioView.dejar_de_editar(vista)
+
+        vista.combo_horario.set.assert_called_with("Selecciona un horario para editar o eliminar")
+        vista.btn_crear.configure.assert_called_with(state="normal")
+
     def test_fallo_al_sincronizar_deshabilita_registro(self):
         controller = Mock()
         controller.obtener_docentes.side_effect = RuntimeError("sin conexión")

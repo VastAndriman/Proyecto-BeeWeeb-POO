@@ -24,7 +24,7 @@ class AulasTests(unittest.TestCase):
         db.table.return_value.select.return_value.execute.side_effect = RuntimeError("sin conexión")
         vista = SimpleNamespace(
             db=db,
-            textbox=Mock(),
+            tabla=Mock(),
             selector=Mock(),
             mensaje=Mock(),
             aulas_por_opcion={"Aula anterior": {"id": 1}},
@@ -37,6 +37,7 @@ class AulasTests(unittest.TestCase):
         self.assertEqual(vista.aulas_por_opcion, {})
         vista.selector.configure.assert_called_with(values=["Selecciona un aula"])
         vista.selector.set.assert_called_with("Selecciona un aula")
+        vista.tabla.set_error.assert_called_once()
         with self.assertRaisesRegex(ValueError, "Selecciona un aula"):
             AulasView._id_seleccionado(vista)
 

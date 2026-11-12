@@ -49,6 +49,26 @@ class PermisosUiTests(unittest.TestCase):
         for boton in botones.values():
             boton.grid.assert_called_once_with()
 
+    def test_accesos_rapidos_solo_se_muestran_al_administrador(self):
+        botones = {name: Mock() for name in (
+            "btn_horarios", "btn_aulas", "btn_docentes", "btn_estudiantes",
+            "btn_academico", "btn_reportes",
+        )}
+        acciones = Mock()
+        info = Mock()
+        app = SimpleNamespace(
+            rol_actual="Estudiante", admin_actions_frame=acciones,
+            dashboard_info_frame=info, **botones,
+        )
+
+        BeeWeekApp._aplicar_permisos_visuales(app)
+        acciones.pack_forget.assert_called_once()
+        app.rol_actual = "Administrador"
+        BeeWeekApp._aplicar_permisos_visuales(app)
+        acciones.pack.assert_called_once_with(
+            fill="x", padx=30, pady=(10, 0), before=info,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

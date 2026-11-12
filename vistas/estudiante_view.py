@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from conexion.supabase_client import SupabaseConnection
+from componentes.tabla_busqueda import TablaBusqueda
 from patrones_creacionales_beeweek import CreadorEstudiante
 
 class EstudianteView(ctk.CTkFrame):
@@ -53,8 +54,12 @@ class EstudianteView(ctk.CTkFrame):
         ctk.CTkLabel(
             listado, text="Estudiantes registrados", font=("Arial", 16, "bold")
         ).pack(anchor="w", padx=18, pady=(18, 10))
-        self.textbox = ctk.CTkTextbox(listado, font=("Courier", 11))
-        self.textbox.pack(fill="both", expand=True, padx=18, pady=(0, 18))
+        self.tabla = TablaBusqueda(
+            listado,
+            (("matricula", "Matrícula", 125), ("nombre_completo", "Estudiante", 190),
+             ("carrera", "Carrera", 150), ("curso", "Curso", 130)),
+        )
+        self.tabla.pack(fill="both", expand=True, padx=18, pady=(0, 18))
         self.cargar_estudiantes()
 
     def cargar_cursos(self):
@@ -122,22 +127,24 @@ class EstudianteView(ctk.CTkFrame):
             self.lbl_mensaje.configure(text=f"Error al guardar: {e}", text_color="#b42333")
 
     def cargar_estudiantes(self):
-        self.textbox.delete("0.0", "end")
+        self.tabla.set_rows([])
         try:
             respuesta = self.db.table("estudiantes").select("*").execute()
             estudiantes = respuesta.data or []
             if not estudiantes:
-                self.textbox.insert("end", "No hay estudiantes registrados todavía.")
                 return True
             cursos = self.db.table("cursos").select("id,paralelo").execute().data or []
             nombres_curso = {str(curso["id"]): curso["paralelo"] for curso in cursos}
-            for estudiante in estudiantes:
-                nombre = f"{estudiante.get('nombre', '')} {estudiante.get('apellido', '')}".strip()
-                matricula = estudiante.get("matricula", "")
-                carrera = estudiante.get("carrera", "")
-                curso = nombres_curso.get(str(estudiante.get("curso_id")), "Sin curso")
-                self.textbox.insert("end", f"{matricula:<14} | {nombre:<28} | {carrera} | {curso}\n")
+            self.tabla.set_rows([
+                {
+                    "matricula": estudiante.get("matricula", ""),
+                    "nombre_completo": f"{estudiante.get('nombre', '')} {estudiante.get('apellido', '')}".strip(),
+                    "carrera": estudiante.get("carrera", ""),
+                    "curso": nombres_curso.get(str(estudiante.get("curso_id")), "Sin curso"),
+                }
+                for estudiante in estudiantes
+            ])
             return True
         except Exception as error:
-            self.textbox.insert("end", f"No se pudieron cargar los estudiantes: {error}")
+            self.tabla.set_error(f"No se pudieron cargar los estudiantes: {error}")
             return False

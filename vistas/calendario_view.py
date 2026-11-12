@@ -11,11 +11,31 @@ class CalendarioView(ctk.CTkFrame):
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.header_frame.pack(fill="x", padx=30, pady=(20, 10))
         
-        self.lbl_titulo = ctk.CTkLabel(self.header_frame, text="📅 Horarios - Vista Semanal", font=("Arial", 22, "bold"))
+        self.lbl_titulo = ctk.CTkLabel(self.header_frame, text="Horarios - Vista Semanal", font=("Arial", 22, "bold"))
         self.lbl_titulo.pack(side="left")
         
-        btn_refresh = ctk.CTkButton(self.header_frame, text="🔄 Sincronizar Calendario", command=self.cargar_horarios, fg_color="#7256ac", hover_color="#5e4497", width=160)
+        btn_refresh = ctk.CTkButton(self.header_frame, text="Sincronizar Calendario", command=self.cargar_horarios, fg_color="#7256ac", hover_color="#5e4497", width=160)
         btn_refresh.pack(side="right")
+
+        filtros = ctk.CTkFrame(self, fg_color="transparent")
+        filtros.pack(fill="x", padx=30, pady=(0, 8))
+        ctk.CTkLabel(filtros, text="Curso:", text_color="#4b3f76").pack(side="left", padx=(0, 7))
+        self.combo_filtro_curso = ctk.CTkOptionMenu(
+            filtros, values=["Todos los cursos"],
+            command=lambda _: self.cargar_horarios(sincronizar=False),
+            fg_color="#7256ac", width=190,
+        )
+        self.combo_filtro_curso.pack(side="left", padx=(0, 18))
+        ctk.CTkLabel(filtros, text="Docente:", text_color="#4b3f76").pack(side="left", padx=(0, 7))
+        self.combo_filtro_docente = ctk.CTkOptionMenu(
+            filtros, values=["Todos los docentes"],
+            command=lambda _: self.cargar_horarios(sincronizar=False),
+            fg_color="#7256ac", width=190,
+        )
+        self.combo_filtro_docente.pack(side="left")
+        self.filtro_cursos = {}
+        self.filtro_docentes = {}
+        self._cache_calendario = None
 
         self.lbl_estado = ctk.CTkLabel(self, text="", text_color="#b42318", anchor="w")
         self.lbl_estado.pack(fill="x", padx=30)
@@ -96,7 +116,7 @@ class CalendarioView(ctk.CTkFrame):
             lbl_dia.grid(row=0, column=col_idx, padx=4, pady=5, sticky="nsew")
             self.grid_container.grid_columnconfigure(col_idx, weight=1)
 
-    def cargar_horarios(self):
+    def cargar_horarios(self, sincronizar=True):
         self.lbl_estado.configure(text="")
         # Limpiar celdas previas de datos
         for widget in self.grid_container.winfo_children():
@@ -118,16 +138,47 @@ class CalendarioView(ctk.CTkFrame):
 
         # Consultar la base de datos para mapear las clases guardadas
         try:
-            materias_map = {str(m.get("id")): m.get("nombre", f"Materia {m.get('id')}") for m in self.horario_controller.obtener_materias(estricto=True)}
-            aulas_map = {str(a.get("id")): str(a.get("numero", a.get("id"))) for a in self.horario_controller.obtener_aulas(estricto=True)}
-            docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes(estricto=True)}
-            cursos_map = {str(c.get("id")): c.get("nombre", "") for c in self.horario_controller.obtener_cursos(estricto=True)}
+            cache = getattr(self, "_cache_calendario", None)
+            if sincronizar or cache is None:
+                self._cache_calendario = None
+                materias_map = {str(m.get("id")): m.get("nombre", f"Materia {m.get('id')}") for m in self.horario_controller.obtener_materias(estricto=True)}
+                aulas_map = {str(a.get("id")): str(a.get("numero", a.get("id"))) for a in self.horario_controller.obtener_aulas(estricto=True)}
+                docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes(estricto=True)}
+                cursos_map = {str(c.get("id")): c.get("nombre", "") for c in self.horario_controller.obtener_cursos(estricto=True)}
+                horarios = self.horario_controller.obtener_horarios_registrados(estricto=True)
+                self._cache_calendario = (materias_map, aulas_map, docentes_map, cursos_map, horarios)
+                if hasattr(self, "combo_filtro_curso"):
+                    self.filtro_cursos = {
+                        f"{nombre} (ID {identificador})": identificador
+                        for identificador, nombre in cursos_map.items()
+                    }
+                    self.filtro_docentes = {
+                        f"{nombre} (ID {identificador})": identificador
+                        for identificador, nombre in docentes_map.items()
+                    }
+                    for combo, opcion_todos, opciones in (
+                        (self.combo_filtro_curso, "Todos los cursos", self.filtro_cursos),
+                        (self.combo_filtro_docente, "Todos los docentes", self.filtro_docentes),
+                    ):
+                        actual = combo.get()
+                        combo.configure(values=[opcion_todos, *opciones])
+                        combo.set(actual if actual in opciones else opcion_todos)
+            else:
+                materias_map, aulas_map, docentes_map, cursos_map, horarios = cache
 
-            horarios = self.horario_controller.obtener_horarios_registrados(estricto=True)
+            curso_elegido = getattr(self, "filtro_cursos", {}).get(
+                self.combo_filtro_curso.get()) if hasattr(self, "combo_filtro_curso") else None
+            docente_elegido = getattr(self, "filtro_docentes", {}).get(
+                self.combo_filtro_docente.get()) if hasattr(self, "combo_filtro_docente") else None
             fin_visible = time.fromisoformat(self.bloques[-1].split("-")[1].strip())
             omitidos = 0
+            visibles = 0
             
             for h in (horarios or []):
+                if curso_elegido is not None and str(h.get("curso_id")) != str(curso_elegido):
+                    continue
+                if docente_elegido is not None and str(h.get("docente_id")) != str(docente_elegido):
+                    continue
                 dia_str = self.normalizar_dia(h.get("dia") or h.get("dia_semana") or "")
                 hora_ini = str(h.get("hora_inicio", "")).strip()[:5]
                 hora_fin = str(h.get("hora_fin", "")).strip()[:5]
@@ -156,6 +207,7 @@ class CalendarioView(ctk.CTkFrame):
                 if row_idx is None:
                     omitidos += 1
                     continue
+                visibles += 1
                     
                 # Cada hora conserva su propia celda. Así dos clases simultáneas
                 # pueden apilarse sin que una tarjeta tape a la otra.
@@ -166,14 +218,14 @@ class CalendarioView(ctk.CTkFrame):
                     )
                     card_materia.pack(fill="x", padx=3, pady=3)
                     if fila == row_idx:
-                        texto_tarjeta = f"📘 {materia_nom}\n📍 Aula: {aula_nom}"
+                        texto_tarjeta = f"{materia_nom}\nAula: {aula_nom}"
                         if docente_nom:
-                            texto_tarjeta += f"\n👨‍🏫 {docente_nom}"
+                            texto_tarjeta += f"\n{docente_nom}"
                         if curso_nom:
-                            texto_tarjeta += f"\n🎓 {curso_nom}"
-                        texto_tarjeta += f"\n⏰ {hora_ini} - {hora_fin}"
+                            texto_tarjeta += f"\n{curso_nom}"
+                        texto_tarjeta += f"\n{hora_ini} - {hora_fin}"
                     else:
-                        texto_tarjeta = f"↳ {materia_nom} · Aula {aula_nom}"
+                        texto_tarjeta = f"{materia_nom}\nAula {aula_nom} (continúa)"
                     ctk.CTkLabel(
                         card_materia, text=texto_tarjeta, font=("Arial", 10, "bold"),
                         text_color="#7256ac", justify="center", wraplength=140,
@@ -182,6 +234,8 @@ class CalendarioView(ctk.CTkFrame):
                 self.lbl_estado.configure(
                     text=f"{omitidos} horario(s) no se muestran por estar fuera de los días u horas visibles."
                 )
+            elif not visibles:
+                self.lbl_estado.configure(text="No hay clases para los filtros seleccionados.")
         except Exception:
             self.lbl_estado.configure(
                 text="No se pudo cargar el calendario. Revisa tu conexión y vuelve a sincronizar."

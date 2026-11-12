@@ -89,7 +89,7 @@ class BeeWeekApp(ctk.CTk):
         # Actualizar datos del usuario logueado en la barra lateral y dashboard
         nombre_completo = usuario.get_nombre_completo()
         self.lbl_user.configure(
-            text=f"👤 {nombre_completo}\n🏷️ Rol: {usuario.obtener_tipo()}\n✉ {usuario.email}"
+            text=f"{nombre_completo}\nRol: {usuario.obtener_tipo()}\n{usuario.email}"
         )
         self.lbl_bienvenida.configure(text=f"Bienvenido, {nombre_completo}")
 
@@ -107,6 +107,12 @@ class BeeWeekApp(ctk.CTk):
                 boton.grid()
             else:
                 boton.grid_remove()
+        acciones = getattr(self, "admin_actions_frame", None)
+        if acciones is not None:
+            if self.rol_actual == "Administrador":
+                acciones.pack(fill="x", padx=30, pady=(10, 0), before=self.dashboard_info_frame)
+            else:
+                acciones.pack_forget()
 
     def _construir_interfaz_principal(self):
         # ==========================================
@@ -140,37 +146,37 @@ class BeeWeekApp(ctk.CTk):
         self.sub_logo.grid(row=1, column=0, padx=20, pady=(0, 20))
         
         # Botones de Navegación Fijos
-        self.btn_dashboard = ctk.CTkButton(self.sidebar_frame, text="📊 Inicio / Métricas", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("dashboard"))
+        self.btn_dashboard = ctk.CTkButton(self.sidebar_frame, text="Inicio / Métricas", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("dashboard"))
         self.btn_dashboard.grid(row=2, column=0, padx=15, pady=6, sticky="ew")
         
-        self.btn_calendario = ctk.CTkButton(self.sidebar_frame, text="📅 Calendario Semanal", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("calendario"))
+        self.btn_calendario = ctk.CTkButton(self.sidebar_frame, text="Calendario Semanal", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("calendario"))
         self.btn_calendario.grid(row=3, column=0, padx=15, pady=6, sticky="ew")
 
-        self.btn_horarios = ctk.CTkButton(self.sidebar_frame, text="⚡ Registro de Horario", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("horarios"))
+        self.btn_horarios = ctk.CTkButton(self.sidebar_frame, text="Registro de Horario", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("horarios"))
         self.btn_horarios.grid(row=4, column=0, padx=15, pady=6, sticky="ew")
         
-        self.btn_aulas = ctk.CTkButton(self.sidebar_frame, text="🏢 Gestión de Aulas", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("aulas"))
+        self.btn_aulas = ctk.CTkButton(self.sidebar_frame, text="Gestión de Aulas", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("aulas"))
         self.btn_aulas.grid(row=5, column=0, padx=15, pady=6, sticky="ew")
 
-        self.btn_docentes = ctk.CTkButton(self.sidebar_frame, text="👨‍🏫 Gestión Docentes", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("docentes"))
+        self.btn_docentes = ctk.CTkButton(self.sidebar_frame, text="Gestión Docentes", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("docentes"))
         self.btn_docentes.grid(row=6, column=0, padx=15, pady=6, sticky="ew")
 
-        self.btn_estudiantes = ctk.CTkButton(self.sidebar_frame, text="🎓 Gestión Estudiantes", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("estudiantes"))
+        self.btn_estudiantes = ctk.CTkButton(self.sidebar_frame, text="Gestión Estudiantes", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("estudiantes"))
         self.btn_estudiantes.grid(row=7, column=0, padx=15, pady=6, sticky="ew")
 
-        self.btn_academico = ctk.CTkButton(self.sidebar_frame, text="📚 Materias y Cursos", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("academico"))
+        self.btn_academico = ctk.CTkButton(self.sidebar_frame, text="Materias y Cursos", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("academico"))
         self.btn_academico.grid(row=8, column=0, padx=15, pady=6, sticky="ew")
 
-        self.btn_reportes = ctk.CTkButton(self.sidebar_frame, text="📑 Reportes", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("reportes"))
+        self.btn_reportes = ctk.CTkButton(self.sidebar_frame, text="Reportes", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("reportes"))
         self.btn_reportes.grid(row=9, column=0, padx=15, pady=6, sticky="ew")
         
         # Footer del Usuario y Cerrar Sesión
-        self.lbl_user = ctk.CTkLabel(self.sidebar_frame, text="👤 Usuario\n🌐 uleam.edu.ec", font=("Arial", 11), text_color="#786f95", anchor="w", justify="left")
+        self.lbl_user = ctk.CTkLabel(self.sidebar_frame, text="Usuario\nuleam.edu.ec", font=("Arial", 11), text_color="#786f95", anchor="w", justify="left")
         self.lbl_user.grid(row=11, column=0, padx=20, pady=(15, 6), sticky="sw")
 
         self.btn_logout = ctk.CTkButton(
             self.sidebar_frame,
-            text="🚪 Cerrar Sesión",
+            text="Cerrar Sesión",
             fg_color="#7256ac",
             hover_color="#5e4497",
             text_color="#ffffff",
@@ -222,15 +228,28 @@ class BeeWeekApp(ctk.CTk):
         card2, self.card_horarios_val = self._crear_tarjeta(cards_frame, "Horarios Activos", "#15803d")
         card2.pack(side="left", padx=15, expand=True, fill="both")
         
-        btn_refresh = ctk.CTkButton(parent, text="🔄 Actualizar datos", command=self.actualizar_metricas, fg_color="#7256ac")
+        btn_refresh = ctk.CTkButton(parent, text="Actualizar datos", command=self.actualizar_metricas, fg_color="#7256ac")
         btn_refresh.pack(anchor="w", padx=30, pady=10)
 
         self.lbl_estado_conexion = ctk.CTkLabel(parent, text="Esperando sincronización...", text_color="#786f95")
         self.lbl_estado_conexion.pack(anchor="w", padx=30)
 
+        self.admin_actions_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        self.admin_actions_frame.pack(fill="x", padx=30, pady=(10, 0))
+        for texto, destino in (
+            ("Crear horario", "horarios"),
+            ("Ver calendario", "calendario"),
+            ("Gestionar aulas", "aulas"),
+        ):
+            ctk.CTkButton(
+                self.admin_actions_frame, text=texto, command=lambda vista=destino: self.cambiar_vista(vista),
+                fg_color="#7256ac", hover_color="#5e4497", height=40,
+            ).pack(side="left", fill="x", expand=True, padx=(0, 10))
+
         # Resumen de funciones disponibles; no simula comprobaciones de servicio.
         info_frame = ctk.CTkFrame(parent, corner_radius=10)
-        info_frame.pack(fill="both", expand=True, padx=30, pady=15)
+        self.dashboard_info_frame = info_frame
+        info_frame.pack(fill="x", padx=30, pady=15)
         
         ctk.CTkLabel(info_frame, text="BeeWeek en resumen", font=("Arial", 16, "bold")).pack(padx=20, pady=(15, 10), anchor="w")
         ctk.CTkLabel(info_frame, text="Consulta las clases de la semana en Calendario Semanal.", font=("Arial", 13), text_color="#4b3f76").pack(padx=20, pady=4, anchor="w")
