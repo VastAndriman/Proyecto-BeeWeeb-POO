@@ -38,7 +38,10 @@ class ReportesView(ctk.CTkFrame):
         ctk.CTkLabel(self.filter_frame, text="Generar Reporte Institucional", font=("Arial", 14, "bold")).pack(anchor="w", padx=20, pady=(15, 5))
         
         # Selectores
-        self.combo_tipo = ctk.CTkOptionMenu(self.filter_frame, values=["Horarios Registrados", "Aulas y Aforo"])
+        self.combo_tipo = ctk.CTkOptionMenu(
+            self.filter_frame, values=["Horarios Registrados", "Aulas y Aforo"],
+            command=lambda _: self._invalidar_reporte(),
+        )
         self.combo_tipo.pack(side="left", padx=20, pady=(0, 20))
 
         btn_generar = ctk.CTkButton(self.filter_frame, text="📄 Generar Vistas de Reporte", command=self.generar_reporte, fg_color="#7256ac")
@@ -56,6 +59,14 @@ class ReportesView(ctk.CTkFrame):
 
         self.txt_reporte = ctk.CTkTextbox(self.preview_frame, font=("Courier", 11))
         self.txt_reporte.pack(fill="both", expand=True, padx=15, pady=15)
+
+    def _invalidar_reporte(self):
+        """Evita exportar el reporte anterior tras cambiar el tipo seleccionado."""
+        self.csv_columnas = []
+        self.csv_filas = []
+        self.btn_exportar.configure(state="disabled")
+        self.txt_reporte.delete("0.0", "end")
+        self.txt_reporte.insert("end", "Pulsa Generar Vistas de Reporte para actualizar los datos.")
 
     def generar_reporte(self):
         tipo = self.combo_tipo.get()
@@ -111,11 +122,15 @@ class ReportesView(ctk.CTkFrame):
                         materias_map.get(str(row.get("materia_id")), f"ID: {row.get('materia_id')}"),
                         cursos_map.get(str(row.get("curso_id")), f"ID: {row.get('curso_id')}"),
                     ])
-            self.btn_exportar.configure(state="normal")
+            if self.csv_filas:
+                self.btn_exportar.configure(state="normal")
+            else:
+                self.txt_reporte.insert("end", "\nNo hay registros para este reporte.")
         except Exception as e:
             self.csv_columnas = []
             self.csv_filas = []
-            self.txt_reporte.insert("end", f"Error al recuperar datos de la nube: {e}")
+            self.txt_reporte.delete("0.0", "end")
+            self.txt_reporte.insert("end", f"No se pudo generar el reporte: {e}")
 
     def exportar_csv(self):
         if not self.csv_columnas:

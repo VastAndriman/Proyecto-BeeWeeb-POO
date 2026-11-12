@@ -69,6 +69,7 @@ class AcademicoView(ctk.CTkFrame):
     def cargar_datos_dinamicos(self):
         self.materias_lista.delete("0.0", "end")
         self.cursos_lista.delete("0.0", "end")
+        materias_ok = cursos_ok = True
         try:
             materias = self.controller.listar_materias()
             for materia in materias:
@@ -78,6 +79,7 @@ class AcademicoView(ctk.CTkFrame):
             if not materias:
                 self.materias_lista.insert("end", "No hay materias registradas.")
         except Exception as error:
+            materias_ok = False
             self.materias_lista.insert("end", f"No se pudieron cargar las materias: {error}")
         try:
             cursos = self.controller.listar_cursos()
@@ -88,24 +90,34 @@ class AcademicoView(ctk.CTkFrame):
             if not cursos:
                 self.cursos_lista.insert("end", "No hay cursos registrados.")
         except Exception as error:
+            cursos_ok = False
             self.cursos_lista.insert("end", f"No se pudieron cargar los cursos: {error}")
+        return materias_ok, cursos_ok
 
     def guardar_materia(self):
         ok, mensaje = self.controller.crear_materia(
             self.materia_nombre.get(), self.materia_creditos.get(), self.materia_semestre.get()
         )
-        self.materia_mensaje.configure(text=mensaje, text_color="#15803d" if ok else "#b42333")
+        color = "#15803d" if ok else "#b42333"
         if ok:
             for campo in (self.materia_nombre, self.materia_creditos, self.materia_semestre):
                 campo.delete(0, "end")
-            self.cargar_datos_dinamicos()
+            materias_ok, _ = self.cargar_datos_dinamicos()
+            if not materias_ok:
+                mensaje += " No se pudo actualizar la lista; vuelve a abrir Materias y Cursos."
+                color = "#9a6700"
+        self.materia_mensaje.configure(text=mensaje, text_color=color)
 
     def guardar_curso(self):
         ok, mensaje = self.controller.crear_curso(
             self.curso_paralelo.get(), self.curso_estudiantes.get()
         )
-        self.curso_mensaje.configure(text=mensaje, text_color="#15803d" if ok else "#b42333")
+        color = "#15803d" if ok else "#b42333"
         if ok:
             for campo in (self.curso_paralelo, self.curso_estudiantes):
                 campo.delete(0, "end")
-            self.cargar_datos_dinamicos()
+            _, cursos_ok = self.cargar_datos_dinamicos()
+            if not cursos_ok:
+                mensaje += " No se pudo actualizar la lista; vuelve a abrir Materias y Cursos."
+                color = "#9a6700"
+        self.curso_mensaje.configure(text=mensaje, text_color=color)

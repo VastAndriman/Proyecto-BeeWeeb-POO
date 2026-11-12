@@ -6,6 +6,27 @@ from vistas.calendario_view import CalendarioView
 
 
 class CalendarioTests(unittest.TestCase):
+    def test_avisa_si_un_horario_queda_fuera_de_la_grilla(self):
+        controller = Mock()
+        controller.obtener_materias.return_value = []
+        controller.obtener_aulas.return_value = []
+        controller.obtener_docentes.return_value = []
+        controller.obtener_cursos.return_value = []
+        controller.obtener_horarios_registrados.return_value = [{
+            "dia": "Lunes", "hora_inicio": "19:00:00", "hora_fin": "20:00:00",
+        }]
+        calendario = SimpleNamespace(
+            lbl_estado=Mock(), grid_container=Mock(), dias=["Lunes"],
+            bloques=["07:00 - 08:00"], horario_controller=controller,
+            normalizar_dia=lambda dia: dia,
+        )
+        calendario.grid_container.winfo_children.return_value = []
+
+        with patch("vistas.calendario_view.ctk.CTkLabel"), patch("vistas.calendario_view.ctk.CTkFrame"):
+            CalendarioView.cargar_horarios(calendario)
+
+        self.assertIn("1 horario", calendario.lbl_estado.configure.call_args.kwargs["text"])
+
     def test_muestra_aviso_si_falla_la_sincronizacion(self):
         controller = Mock()
         controller.obtener_materias.side_effect = RuntimeError("sin conexión")

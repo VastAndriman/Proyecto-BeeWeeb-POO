@@ -9,6 +9,39 @@ from vistas.reportes_view import ReportesView, guardar_csv
 
 
 class ReporteCsvTests(unittest.TestCase):
+    def test_sin_registros_no_habilita_exportacion(self):
+        controller = Mock()
+        controller.obtener_materias.return_value = []
+        controller.obtener_aulas.return_value = []
+        controller.obtener_docentes.return_value = []
+        controller.obtener_cursos.return_value = []
+        controller.obtener_horarios_registrados.return_value = []
+        vista = SimpleNamespace(
+            horario_controller=controller, combo_tipo=Mock(), txt_reporte=Mock(),
+            btn_exportar=Mock(), csv_columnas=[], csv_filas=[],
+        )
+        vista.combo_tipo.get.return_value = "Horarios Registrados"
+
+        ReportesView.generar_reporte(vista)
+
+        self.assertEqual(vista.csv_filas, [])
+        self.assertIn("No hay registros", vista.txt_reporte.insert.call_args.args[1])
+        self.assertNotIn(
+            "normal", [call.kwargs.get("state") for call in vista.btn_exportar.configure.call_args_list]
+        )
+
+    def test_cambiar_tipo_invalida_reporte_anterior(self):
+        vista = SimpleNamespace(
+            csv_columnas=["Día"], csv_filas=[["Lunes"]],
+            btn_exportar=Mock(), txt_reporte=Mock(),
+        )
+
+        ReportesView._invalidar_reporte(vista)
+
+        self.assertEqual(vista.csv_columnas, [])
+        self.assertEqual(vista.csv_filas, [])
+        vista.btn_exportar.configure.assert_called_once_with(state="disabled")
+
     def test_horario_aparece_en_reporte_y_csv(self):
         controller = Mock()
         controller.obtener_materias.return_value = [{"id": 1, "nombre": "POO"}]
