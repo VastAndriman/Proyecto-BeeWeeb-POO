@@ -1,5 +1,6 @@
 import customtkinter as ctk
 
+from componentes.tabla_busqueda import TablaBusqueda
 from controladores.academico_controller import AcademicoController
 
 
@@ -49,7 +50,11 @@ class AcademicoView(ctk.CTkFrame):
         )
         self.materia_mensaje = ctk.CTkLabel(parent, text="", wraplength=350)
         self.materia_mensaje.pack(fill="x", padx=18)
-        self.materias_lista = ctk.CTkTextbox(parent, height=170, font=("Courier", 11))
+        self.materias_lista = TablaBusqueda(
+            parent,
+            (("nombre", "Materia", 190), ("creditos", "Créditos", 90),
+             ("semestre", "Semestre", 90)),
+        )
         self.materias_lista.pack(fill="both", expand=True, padx=18, pady=(8, 18))
 
     def _construir_cursos(self, parent):
@@ -63,35 +68,29 @@ class AcademicoView(ctk.CTkFrame):
         )
         self.curso_mensaje = ctk.CTkLabel(parent, text="", wraplength=350)
         self.curso_mensaje.pack(fill="x", padx=18)
-        self.cursos_lista = ctk.CTkTextbox(parent, height=170, font=("Courier", 11))
+        self.cursos_lista = TablaBusqueda(
+            parent,
+            (("paralelo", "Curso / paralelo", 190),
+             ("num_estudiantes", "Estudiantes", 110)),
+        )
         self.cursos_lista.pack(fill="both", expand=True, padx=18, pady=(8, 18))
 
     def cargar_datos_dinamicos(self):
-        self.materias_lista.delete("0.0", "end")
-        self.cursos_lista.delete("0.0", "end")
+        self.materias_lista.set_rows([])
+        self.cursos_lista.set_rows([])
         materias_ok = cursos_ok = True
         try:
             materias = self.controller.listar_materias()
-            for materia in materias:
-                self.materias_lista.insert(
-                    "end", f"{materia.get('nombre', '')} · {materia.get('creditos', '')} créditos · Sem. {materia.get('semestre', '')}\n"
-                )
-            if not materias:
-                self.materias_lista.insert("end", "No hay materias registradas.")
+            self.materias_lista.set_rows(materias)
         except Exception as error:
             materias_ok = False
-            self.materias_lista.insert("end", f"No se pudieron cargar las materias: {error}")
+            self.materias_lista.set_error(f"No se pudieron cargar las materias: {error}")
         try:
             cursos = self.controller.listar_cursos()
-            for curso in cursos:
-                self.cursos_lista.insert(
-                    "end", f"{curso.get('paralelo', '')} · {curso.get('num_estudiantes', '')} estudiantes\n"
-                )
-            if not cursos:
-                self.cursos_lista.insert("end", "No hay cursos registrados.")
+            self.cursos_lista.set_rows(cursos)
         except Exception as error:
             cursos_ok = False
-            self.cursos_lista.insert("end", f"No se pudieron cargar los cursos: {error}")
+            self.cursos_lista.set_error(f"No se pudieron cargar los cursos: {error}")
         return materias_ok, cursos_ok
 
     def guardar_materia(self):

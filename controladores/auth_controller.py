@@ -94,7 +94,7 @@ class AuthController:
 
     def registrar_usuario(self_or_id=None, identificacion: str = None, nombre: str = None, apellido: str = None, email: str = None, username: str = None, contrasena: str = None, rol: str = "Docente", *args, **kwargs) -> tuple[bool, str]:
         """
-        Registra un nuevo usuario en la base de datos Supabase con contraseña cifrada (SHA-256).
+        Registra un nuevo usuario; la base almacena la contraseña con bcrypt.
         Soporta uso por instancia inyectada o llamada directa de clase.
         """
         if isinstance(self_or_id, AuthController):

@@ -68,7 +68,7 @@ class HorarioController:
         try:
             res = inst.db.table("cursos").select("*").execute()
             return [
-                {**curso, "nombre": curso.get("nombre") or f"Paralelo {curso.get('paralelo', '')}"}
+                {**curso, "nombre": curso.get("nombre") or curso.get("paralelo", "")}
                 for curso in (res.data or [])
             ]
         except Exception:

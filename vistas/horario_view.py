@@ -13,6 +13,11 @@ class HorarioView(ctk.CTkFrame):
         self.materias_map = {}
         self.cursos_map = {}
         self.horarios_map = {}
+        self.historial_disponible = False
+        self._materias_lookup = {}
+        self._cursos_lookup = {}
+        self._aulas_lookup = {}
+        self._docentes_lookup = {}
 
         # Contenedor desplazable principal
         self.scroll_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
@@ -254,6 +259,7 @@ class HorarioView(ctk.CTkFrame):
 
     def cargar_datos_dinamicos(self):
         """Carga aulas, docentes, materias y cursos en los selectores desplegables"""
+        self.historial_disponible = False
         self.lbl_mensaje.configure(text="Sincronizando listas con Supabase...", text_color="#7256ac")
 
         try:
@@ -262,6 +268,10 @@ class HorarioView(ctk.CTkFrame):
             materias = self.horario_controller.obtener_materias(estricto=True)
             cursos = self.horario_controller.obtener_cursos(estricto=True)
         except Exception:
+            self._materias_lookup = {}
+            self._cursos_lookup = {}
+            self._aulas_lookup = {}
+            self._docentes_lookup = {}
             for mapa in (self.docentes_map, self.aulas_map, self.materias_map,
                          self.cursos_map, self.horarios_map):
                 mapa.clear()
@@ -284,6 +294,17 @@ class HorarioView(ctk.CTkFrame):
                 text_color="#b42333",
             )
             return
+
+        # Reutiliza estas listas al dibujar el historial; evita cuatro consultas extra.
+        self._materias_lookup = {str(m.get("id")): m.get("nombre", "") for m in materias}
+        self._cursos_lookup = {str(c.get("id")): c.get("nombre", "") for c in cursos}
+        self._aulas_lookup = {
+            str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in aulas
+        }
+        self._docentes_lookup = {
+            str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip()
+            for d in docentes
+        }
 
         # 1. Cargar Docentes
         self.docentes_map.clear()
@@ -367,6 +388,7 @@ class HorarioView(ctk.CTkFrame):
 
     def refrescar_historial_horarios(self):
         """Muestra los horarios ya registrados en la base de datos con nombres legibles"""
+        self.historial_disponible = False
         self.textbox_horarios.delete("0.0", "end")
         self.horarios_map = {}
         aviso = "Selecciona un horario para editar o eliminar"
@@ -374,11 +396,6 @@ class HorarioView(ctk.CTkFrame):
         self.combo_horario.set(aviso)
         try:
             horarios = self.horario_controller.obtener_horarios_registrados(estricto=True)
-            if horarios:
-                materias_lookup = {str(m.get("id")): m.get("nombre", "") for m in self.horario_controller.obtener_materias(estricto=True)}
-                cursos_lookup = {str(c.get("id")): c.get("nombre", "") for c in self.horario_controller.obtener_cursos(estricto=True)}
-                aulas_lookup = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in self.horario_controller.obtener_aulas(estricto=True)}
-                docentes_lookup = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes(estricto=True)}
         except Exception:
             self.textbox_horarios.insert("end", "No se pudo cargar el historial de horarios.\n")
             return False
@@ -388,6 +405,7 @@ class HorarioView(ctk.CTkFrame):
         }
         self.combo_horario.configure(values=list(self.horarios_map) or ["Selecciona un horario para editar o eliminar"])
         self.combo_horario.set("Selecciona un horario para editar o eliminar")
+        self.historial_disponible = True
         if not horarios:
             self.textbox_horarios.insert("end", "No hay horarios registrados en el sistema.\n")
             return True
@@ -407,10 +425,10 @@ class HorarioView(ctk.CTkFrame):
             materia_id = str(h.get('materia_id', ''))
             curso_id = str(h.get('curso_id', ''))
 
-            aula_nom = aulas_lookup.get(aula_id, f"ID: {aula_id}")[:12]
-            docente_nom = docentes_lookup.get(docente_id, f"ID: {docente_id}")[:20]
-            materia_nom = materias_lookup.get(materia_id, f"ID: {materia_id}")[:28]
-            curso_nom = cursos_lookup.get(curso_id, f"ID: {curso_id}")[:18]
+            aula_nom = self._aulas_lookup.get(aula_id, f"ID: {aula_id}")[:12]
+            docente_nom = self._docentes_lookup.get(docente_id, f"ID: {docente_id}")[:20]
+            materia_nom = self._materias_lookup.get(materia_id, f"ID: {materia_id}")[:28]
+            curso_nom = self._cursos_lookup.get(curso_id, f"ID: {curso_id}")[:18]
 
             linea = f"{dia:<10} | {hora_str:<13} | {aula_nom:<12} | {docente_nom:<20} | {materia_nom:<28} | {curso_nom:<18}\n"
             self.textbox_horarios.insert("end", linea)
@@ -466,10 +484,15 @@ class HorarioView(ctk.CTkFrame):
                 combo.set(next(iter(mapa)))
         self.al_seleccionar_aula(self.combo_aula.get())
         self.al_seleccionar_curso(self.combo_curso.get())
-        self.btn_crear.configure(state="normal" if all((
+        listo = self.historial_disponible and all((
             self.docentes_map, self.aulas_map, self.materias_map, self.cursos_map
-        )) else "disabled")
-        self.lbl_mensaje.configure(text="Listo para registrar un horario nuevo.", text_color="#7256ac")
+        ))
+        self.btn_crear.configure(state="normal" if listo else "disabled")
+        self.lbl_mensaje.configure(
+            text=("Listo para registrar un horario nuevo." if listo else
+                  "Actualiza las opciones antes de registrar un horario nuevo."),
+            text_color="#7256ac" if listo else "#b42333",
+        )
 
     def _datos_formulario(self):
         datos = {

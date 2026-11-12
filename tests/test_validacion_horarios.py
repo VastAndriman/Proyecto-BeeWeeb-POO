@@ -40,6 +40,15 @@ class ValidacionHorariosTests(unittest.TestCase):
         self.assertIn("Aforo insuficiente", mensaje)
         self.horarios.insert.assert_not_called()
 
+    def test_curso_usa_el_nombre_real_del_paralelo(self):
+        self.curso.select.return_value.execute.return_value = SimpleNamespace(
+            data=[{"id": 1, "paralelo": "Paralelo A", "num_estudiantes": 20}]
+        )
+
+        cursos = self.controller.obtener_cursos(estricto=True)
+
+        self.assertEqual(cursos[0]["nombre"], "Paralelo A")
+
     def test_rechaza_cruce_de_docente_sin_insertar(self):
         self.horarios.select.return_value.eq.return_value.execute.return_value = SimpleNamespace(
             data=[{

@@ -30,6 +30,7 @@ class TablaBusqueda(ctk.CTkFrame):
         self.campos = tuple(campo for campo, _, _ in columnas)
         self.registros = []
         self.on_select = on_select
+        self._error = None
 
         barra = ctk.CTkFrame(self, fg_color="transparent")
         barra.pack(fill="x", pady=(0, 9))
@@ -46,7 +47,7 @@ class TablaBusqueda(ctk.CTkFrame):
         estilo.theme_use("clam")
         estilo.configure(
             "BeeWeek.Treeview", background="#ffffff", fieldbackground="#ffffff",
-            foreground="#4b3f76", rowheight=32, borderwidth=0,
+            foreground="#4b3f76", font=("Arial", 11), rowheight=32, borderwidth=0,
         )
         estilo.configure(
             "BeeWeek.Treeview.Heading", background="#e8e1fb", foreground="#4b3f76",
@@ -76,12 +77,13 @@ class TablaBusqueda(ctk.CTkFrame):
 
     def set_rows(self, registros):
         self.registros = list(registros)
+        self._error = None
         self._mostrar()
 
     def set_error(self, mensaje):
         self.registros = []
+        self._error = mensaje
         self._mostrar()
-        self.aviso.configure(text=mensaje, text_color="#b42333")
 
     def _mostrar(self):
         self.tree.delete(*self.tree.get_children())
@@ -91,12 +93,15 @@ class TablaBusqueda(ctk.CTkFrame):
                              values=[registro.get(campo, "") for campo in self.campos])
         self._visibles = encontrados
         self.contador.configure(text=f"{len(encontrados)} registro(s)")
-        self.aviso.configure(
-            text="" if encontrados else (
-                "No hay registros todavía." if not self.registros else "No hay coincidencias."
-            ),
-            text_color="#786f95",
-        )
+        if self._error:
+            self.aviso.configure(text=self._error, text_color="#b42333")
+        else:
+            self.aviso.configure(
+                text="" if encontrados else (
+                    "No hay registros todavía." if not self.registros else "No hay coincidencias."
+                ),
+                text_color="#786f95",
+            )
 
     def _seleccionar(self, _evento):
         if not self.on_select:
