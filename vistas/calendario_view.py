@@ -106,6 +106,7 @@ class CalendarioView(ctk.CTkFrame):
 
         # Dibuja la grilla base de horas
         total_cols = len(self.dias)
+        celdas = {}
         for row_idx, hora in enumerate(self.bloques, start=1):
             lbl_hora = ctk.CTkLabel(self.grid_container, text=hora, font=("Arial", 11, "bold"), text_color="#786f95", width=110)
             lbl_hora.grid(row=row_idx, column=0, padx=5, pady=4, sticky="nsew")
@@ -113,6 +114,7 @@ class CalendarioView(ctk.CTkFrame):
             for col_idx in range(1, total_cols + 1):
                 cell_frame = ctk.CTkFrame(self.grid_container, corner_radius=6, border_width=1, border_color="#d2cbe8", fg_color="transparent", height=70)
                 cell_frame.grid(row=row_idx, column=col_idx, padx=3, pady=3, sticky="nsew")
+                celdas[(row_idx, col_idx)] = cell_frame
 
         # Consultar la base de datos para mapear las clases guardadas
         try:
@@ -144,29 +146,27 @@ class CalendarioView(ctk.CTkFrame):
                     if row_idx is None:
                         continue
                     
-                    # Colocar tarjeta de la materia en la celda
-                    card_materia = ctk.CTkFrame(self.grid_container, fg_color="#e8e1fb", corner_radius=8, border_width=1, border_color="#c7b8e9")
-                    card_materia.grid(row=row_idx, column=col_idx, rowspan=filas,
-                                      padx=3, pady=3, sticky="nsew")
-                    
-                    texto_tarjeta = f"📘 {materia_nom}"
-                    texto_tarjeta += f"\n📍 Aula: {aula_nom}"
-                    if docente_nom:
-                        texto_tarjeta += f"\n👨‍🏫 {docente_nom}"
-                    if curso_nom:
-                        texto_tarjeta += f"\n🎓 {curso_nom}"
-                    if hora_ini and hora_fin:
-                        texto_tarjeta += f"\n⏰ {hora_ini} - {hora_fin}"
-
-                    lbl_m = ctk.CTkLabel(
-                        card_materia, 
-                        text=texto_tarjeta, 
-                        font=("Arial", 10, "bold"), 
-                        text_color="#7256ac",
-                        justify="center",
-                        wraplength=140
-                    )
-                    lbl_m.pack(expand=True, fill="both", padx=6, pady=6)
+                    # Cada hora conserva su propia celda. Así dos clases simultáneas
+                    # pueden apilarse sin que una tarjeta tape a la otra.
+                    for fila in range(row_idx, min(row_idx + filas, len(self.bloques) + 1)):
+                        card_materia = ctk.CTkFrame(
+                            celdas[(fila, col_idx)], fg_color="#e8e1fb", corner_radius=8,
+                            border_width=1, border_color="#c7b8e9",
+                        )
+                        card_materia.pack(fill="x", padx=3, pady=3)
+                        if fila == row_idx:
+                            texto_tarjeta = f"📘 {materia_nom}\n📍 Aula: {aula_nom}"
+                            if docente_nom:
+                                texto_tarjeta += f"\n👨‍🏫 {docente_nom}"
+                            if curso_nom:
+                                texto_tarjeta += f"\n🎓 {curso_nom}"
+                            texto_tarjeta += f"\n⏰ {hora_ini} - {hora_fin}"
+                        else:
+                            texto_tarjeta = f"↳ {materia_nom} · Aula {aula_nom}"
+                        ctk.CTkLabel(
+                            card_materia, text=texto_tarjeta, font=("Arial", 10, "bold"),
+                            text_color="#7256ac", justify="center", wraplength=140,
+                        ).pack(expand=True, fill="both", padx=6, pady=6)
         except Exception:
             self.lbl_estado.configure(
                 text="No se pudo cargar el calendario. Revisa tu conexión y vuelve a sincronizar."

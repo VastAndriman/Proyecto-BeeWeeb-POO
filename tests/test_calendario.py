@@ -43,7 +43,7 @@ class CalendarioTests(unittest.TestCase):
             (2, 2),
         )
 
-    def test_tarjeta_del_calendario_cubre_intervalo_completo(self):
+    def test_clase_larga_se_muestra_en_cada_bloque_sin_tapar_celdas(self):
         controller = Mock()
         controller.obtener_materias.return_value = [{"id": 1, "nombre": "POO"}]
         controller.obtener_aulas.return_value = [{"id": 2, "numero": "101"}]
@@ -63,12 +63,49 @@ class CalendarioTests(unittest.TestCase):
         )
         calendario.grid_container.winfo_children.return_value = []
 
+        marcos = [Mock() for _ in range(24)]
         with patch("vistas.calendario_view.ctk.CTkLabel"), patch(
-            "vistas.calendario_view.ctk.CTkFrame"
+            "vistas.calendario_view.ctk.CTkFrame", side_effect=marcos
         ) as frame:
             CalendarioView.cargar_horarios(calendario)
 
-        self.assertEqual(frame.return_value.grid.call_args.kwargs["rowspan"], 12)
+        self.assertEqual(frame.call_count, 24)
+        for tarjeta in marcos[12:]:
+            tarjeta.pack.assert_called_once()
+            tarjeta.grid.assert_not_called()
+
+    def test_clases_simultaneas_comparten_celda_sin_superponerse(self):
+        controller = Mock()
+        controller.obtener_materias.return_value = [{"id": 1, "nombre": "POO"}]
+        controller.obtener_aulas.return_value = [{"id": 2, "numero": "101"}]
+        controller.obtener_docentes.return_value = [{"id": 3, "nombre": "Ana"}]
+        controller.obtener_cursos.return_value = [{"id": 4, "nombre": "A"}]
+        horario = {
+            "dia": "Lunes", "hora_inicio": "07:00:00", "hora_fin": "08:00:00",
+            "materia_id": 1, "aula_id": 2, "docente_id": 3, "curso_id": 4,
+        }
+        controller.obtener_horarios_registrados.return_value = [
+            horario, {**horario, "aula_id": 8, "docente_id": 9, "curso_id": 10},
+        ]
+        calendario = SimpleNamespace(
+            lbl_estado=Mock(), grid_container=Mock(), dias=["Lunes"],
+            bloques=["07:00 - 08:00"], horario_controller=controller,
+            normalizar_dia=lambda dia: dia,
+            filas_para_intervalo=CalendarioView.filas_para_intervalo,
+        )
+        calendario.grid_container.winfo_children.return_value = []
+        marcos = [Mock() for _ in range(3)]
+
+        with patch("vistas.calendario_view.ctk.CTkLabel"), patch(
+            "vistas.calendario_view.ctk.CTkFrame", side_effect=marcos
+        ) as frame:
+            CalendarioView.cargar_horarios(calendario)
+
+        self.assertEqual(frame.call_count, 3)
+        self.assertIs(frame.call_args_list[1].args[0], marcos[0])
+        self.assertIs(frame.call_args_list[2].args[0], marcos[0])
+        marcos[1].pack.assert_called_once()
+        marcos[2].pack.assert_called_once()
 
 
 if __name__ == "__main__":
