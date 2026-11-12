@@ -191,14 +191,19 @@ class BeeWeekApp(ctk.CTk):
         # Registro de vistas
         self.vistas["dashboard"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
         self._construir_dashboard(self.vistas["dashboard"])
-        
-        self.vistas["calendario"] = CalendarioView(self.content_area, horario_controller=self.horario_controller)
-        self.vistas["horarios"] = HorarioView(self.content_area, horario_controller=self.horario_controller)
-        self.vistas["aulas"] = AulasView(self.content_area, db_client=self.db_client)
-        self.vistas["docentes"] = DocenteView(self.content_area, db_client=self.db_client)
-        self.vistas["estudiantes"] = EstudianteView(self.content_area, db_client=self.db_client)
-        self.vistas["academico"] = AcademicoView(self.content_area, academico_controller=self.academico_controller)
-        self.vistas["reportes"] = ReportesView(self.content_area, horario_controller=self.horario_controller)
+
+    def _crear_vista(self, nombre_vista):
+        """Construye un módulo solo cuando la persona lo abre por primera vez."""
+        constructores = {
+            "calendario": lambda: CalendarioView(self.content_area, horario_controller=self.horario_controller),
+            "horarios": lambda: HorarioView(self.content_area, horario_controller=self.horario_controller),
+            "aulas": lambda: AulasView(self.content_area, db_client=self.db_client),
+            "docentes": lambda: DocenteView(self.content_area, db_client=self.db_client),
+            "estudiantes": lambda: EstudianteView(self.content_area, db_client=self.db_client),
+            "academico": lambda: AcademicoView(self.content_area, academico_controller=self.academico_controller),
+            "reportes": lambda: ReportesView(self.content_area, horario_controller=self.horario_controller),
+        }
+        return constructores[nombre_vista]()
 
     def _construir_dashboard(self, parent):
         self.lbl_bienvenida = ctk.CTkLabel(parent, text="Bienvenido, Usuario", font=("Arial", 22, "bold"))
@@ -260,10 +265,16 @@ class BeeWeekApp(ctk.CTk):
     def cambiar_vista(self, nombre_vista):
         if self.rol_actual != "Administrador" and nombre_vista not in ("dashboard", "calendario"):
             nombre_vista = "calendario"
+        nueva = nombre_vista not in self.vistas
+        if nueva:
+            self.vistas[nombre_vista] = self._crear_vista(nombre_vista)
         for vista in self.vistas.values():
             vista.pack_forget()
         vista_activa = self.vistas[nombre_vista]
         vista_activa.pack(fill="both", expand=True)
+        # Los módulos nuevos ya cargan sus datos en __init__.
+        if nueva:
+            return
         if hasattr(vista_activa, "cargar_datos_dinamicos"):
             vista_activa.cargar_datos_dinamicos()
         elif hasattr(vista_activa, "cargar_horarios"):
