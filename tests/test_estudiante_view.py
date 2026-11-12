@@ -6,6 +6,26 @@ from vistas.estudiante_view import EstudianteView
 
 
 class EstudianteViewTests(unittest.TestCase):
+    def test_guardado_avisa_si_no_se_puede_recargar_lista(self):
+        campos = {
+            nombre: Mock(**{"get.return_value": valor})
+            for nombre, valor in (
+                ("entry_identificacion", "1234567890"), ("entry_nombre", "Ana"),
+                ("entry_apellido", "Paz"), ("entry_email", "ana@ejemplo.edu"),
+                ("entry_matricula", "M001"), ("entry_carrera", "Software"),
+            )
+        }
+        vista = SimpleNamespace(
+            **campos, combo_curso=Mock(), cursos_map={}, lbl_mensaje=Mock(),
+            creador_estudiante=Mock(), db=Mock(), cargar_estudiantes=Mock(return_value=False),
+        )
+
+        EstudianteView.guardar_estudiante(vista)
+
+        vista.creador_estudiante.registrar.assert_called_once()
+        self.assertIn("guardado", vista.lbl_mensaje.configure.call_args.kwargs["text"])
+        self.assertIn("no se pudo actualizar", vista.lbl_mensaje.configure.call_args.kwargs["text"])
+
     def test_avisa_si_no_se_pueden_cargar_los_cursos(self):
         db = Mock()
         db.table.return_value.select.return_value.execute.side_effect = RuntimeError("sin conexión")

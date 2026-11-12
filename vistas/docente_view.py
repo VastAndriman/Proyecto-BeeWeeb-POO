@@ -85,8 +85,6 @@ class DocenteView(ctk.CTkFrame):
                 especialidad=especialidad,
                 db_client=self.db,
             )
-            self.lbl_mensaje.configure(text="¡Docente guardado con éxito!", text_color="#15803d")
-            
             # Limpiar campos
             self.entry_identificacion.delete(0, 'end')
             self.entry_nombre.delete(0, 'end')
@@ -95,7 +93,13 @@ class DocenteView(ctk.CTkFrame):
             self.entry_especialidad.delete(0, 'end')
 
             # Recargar la lista en vivo
-            self.cargar_docentes()
+            if self.cargar_docentes():
+                self.lbl_mensaje.configure(text="¡Docente guardado con éxito!", text_color="#15803d")
+            else:
+                self.lbl_mensaje.configure(
+                    text="Docente guardado, pero no se pudo actualizar la lista. Pulsa Sincronizar Lista.",
+                    text_color="#9a6700",
+                )
             
         except Exception as e:
             self.lbl_mensaje.configure(text=f"Error al guardar: {e}", text_color="#b42333")
@@ -121,6 +125,8 @@ class DocenteView(ctk.CTkFrame):
                 
                 linea = f"{ced:<12} | {nom:<25} | {esp:<18}\n"
                 self.textbox.insert("end", linea)
+            return True
                 
         except Exception as e:
             self.textbox.insert("end", f"Error al consultar Supabase: {e}")
+            return False

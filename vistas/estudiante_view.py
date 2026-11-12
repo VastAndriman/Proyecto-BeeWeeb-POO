@@ -103,8 +103,6 @@ class EstudianteView(ctk.CTkFrame):
                 curso_id=curso_id,
                 db_client=self.db,
             )
-            self.lbl_mensaje.configure(text="¡Estudiante guardado con éxito en la nube!", text_color="green")
-            
             # Limpiar campos
             self.entry_identificacion.delete(0, 'end')
             self.entry_nombre.delete(0, 'end')
@@ -113,9 +111,15 @@ class EstudianteView(ctk.CTkFrame):
             self.entry_matricula.delete(0, 'end')
             self.entry_carrera.delete(0, 'end')
             self.combo_curso.set("Sin curso")
-            self.cargar_estudiantes()
+            if self.cargar_estudiantes():
+                self.lbl_mensaje.configure(text="¡Estudiante guardado con éxito en la nube!", text_color="#15803d")
+            else:
+                self.lbl_mensaje.configure(
+                    text="Estudiante guardado, pero no se pudo actualizar la lista. Vuelve a sincronizar.",
+                    text_color="#9a6700",
+                )
         except Exception as e:
-            self.lbl_mensaje.configure(text=f"Error al guardar: {e}", text_color="red")
+            self.lbl_mensaje.configure(text=f"Error al guardar: {e}", text_color="#b42333")
 
     def cargar_estudiantes(self):
         self.textbox.delete("0.0", "end")
@@ -124,7 +128,7 @@ class EstudianteView(ctk.CTkFrame):
             estudiantes = respuesta.data or []
             if not estudiantes:
                 self.textbox.insert("end", "No hay estudiantes registrados todavía.")
-                return
+                return True
             cursos = self.db.table("cursos").select("id,paralelo").execute().data or []
             nombres_curso = {str(curso["id"]): curso["paralelo"] for curso in cursos}
             for estudiante in estudiantes:
@@ -133,5 +137,7 @@ class EstudianteView(ctk.CTkFrame):
                 carrera = estudiante.get("carrera", "")
                 curso = nombres_curso.get(str(estudiante.get("curso_id")), "Sin curso")
                 self.textbox.insert("end", f"{matricula:<14} | {nombre:<28} | {carrera} | {curso}\n")
+            return True
         except Exception as error:
             self.textbox.insert("end", f"No se pudieron cargar los estudiantes: {error}")
+            return False
