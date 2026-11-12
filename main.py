@@ -22,6 +22,30 @@ from conexion.supabase_client import SupabaseConnection
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme(os.path.join(os.path.dirname(__file__), "assets", "lavanda_theme.json"))
 
+
+def resumir_horarios(horarios, materias, limite=5):
+    """Prepara las primeras clases de la semana para la tarjeta de Inicio."""
+    dias = {dia: indice for indice, dia in enumerate(
+        ("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado")
+    )}
+    nombres = {str(materia.get("id")): materia.get("nombre", "") for materia in materias}
+    ordenados = sorted(
+        horarios,
+        key=lambda horario: (
+            dias.get(horario.get("dia"), len(dias)),
+            str(horario.get("hora_inicio", "")),
+        ),
+    )
+    return [
+        (
+            horario.get("dia", ""),
+            f"{str(horario.get('hora_inicio', ''))[:5]}–{str(horario.get('hora_fin', ''))[:5]}",
+            nombres.get(str(horario.get("materia_id")), "Materia sin nombre"),
+        )
+        for horario in ordenados[:limite]
+    ]
+
+
 class BeeWeekApp(ctk.CTk):
     def __init__(self, db_client=None):
         super().__init__()
@@ -94,7 +118,6 @@ class BeeWeekApp(ctk.CTk):
         self.lbl_bienvenida.configure(text=f"Bienvenido, {nombre_completo}")
 
         self.cambiar_vista("dashboard")
-        self.actualizar_metricas()
 
     def _aplicar_permisos_visuales(self):
         """Muestra las pantallas que corresponden al rol; el servidor tambien lo valida."""
@@ -195,7 +218,9 @@ class BeeWeekApp(ctk.CTk):
         self.content_area.grid_columnconfigure(0, weight=1)
 
         # Registro de vistas
-        self.vistas["dashboard"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
+        self.vistas["dashboard"] = ctk.CTkScrollableFrame(
+            self.content_area, fg_color="transparent"
+        )
         self._construir_dashboard(self.vistas["dashboard"])
 
     def _crear_vista(self, nombre_vista):
@@ -246,15 +271,47 @@ class BeeWeekApp(ctk.CTk):
                 fg_color="#7256ac", hover_color="#5e4497", height=40,
             ).pack(side="left", fill="x", expand=True, padx=(0, 10))
 
-        # Resumen de funciones disponibles; no simula comprobaciones de servicio.
+        # Vista rápida del horario real, visible inmediatamente después del acceso.
         info_frame = ctk.CTkFrame(parent, corner_radius=10)
         self.dashboard_info_frame = info_frame
         info_frame.pack(fill="x", padx=30, pady=15)
         
-        ctk.CTkLabel(info_frame, text="BeeWeek en resumen", font=("Arial", 16, "bold")).pack(padx=20, pady=(15, 10), anchor="w")
-        ctk.CTkLabel(info_frame, text="Consulta las clases de la semana en Calendario Semanal.", font=("Arial", 13), text_color="#4b3f76").pack(padx=20, pady=4, anchor="w")
-        ctk.CTkLabel(info_frame, text="Los horarios se validan al registrarlos o modificarlos.", font=("Arial", 13), text_color="#4b3f76").pack(padx=20, pady=4, anchor="w")
-        ctk.CTkLabel(info_frame, text="Los datos mostrados arriba provienen de Supabase.", font=("Arial", 13), text_color="#4b3f76").pack(padx=20, pady=(4, 15), anchor="w")
+        encabezado = ctk.CTkFrame(info_frame, fg_color="transparent")
+        encabezado.pack(fill="x", padx=20, pady=(15, 7))
+        ctk.CTkLabel(
+            encabezado, text="Horario de la semana", font=("Arial", 16, "bold"),
+        ).pack(side="left")
+        ctk.CTkButton(
+            encabezado, text="Ver calendario completo", width=170,
+            command=lambda: self.cambiar_vista("calendario"),
+        ).pack(side="right")
+        self.resumen_horario_lista = ctk.CTkFrame(info_frame, fg_color="transparent")
+        self.resumen_horario_lista.pack(fill="x", padx=20, pady=(0, 15))
+        self._mostrar_resumen_horario([], "Cargando horario...")
+
+    def _mostrar_resumen_horario(self, clases, aviso=""):
+        for widget in self.resumen_horario_lista.winfo_children():
+            widget.destroy()
+        if not clases:
+            ctk.CTkLabel(
+                self.resumen_horario_lista,
+                text=aviso or "No hay clases registradas para esta semana.",
+                text_color="#786f95", anchor="w",
+            ).pack(fill="x", pady=8)
+            return
+        for dia, hora, materia in clases:
+            fila = ctk.CTkFrame(self.resumen_horario_lista, fg_color="#f3f0fb", corner_radius=8)
+            fila.pack(fill="x", pady=3)
+            fila.grid_columnconfigure(2, weight=1)
+            ctk.CTkLabel(fila, text=dia, width=95, anchor="w", text_color="#4b3f76").grid(
+                row=0, column=0, padx=(12, 5), pady=5, sticky="w"
+            )
+            ctk.CTkLabel(fila, text=hora, width=120, anchor="w", text_color="#7256ac").grid(
+                row=0, column=1, padx=5, pady=5, sticky="w"
+            )
+            ctk.CTkLabel(fila, text=materia, anchor="w", text_color="#4b3f76").grid(
+                row=0, column=2, padx=(5, 12), pady=5, sticky="ew"
+            )
 
     def _crear_tarjeta(self, parent, titulo, color_valor):
         card = ctk.CTkFrame(parent, width=200, height=100, corner_radius=10)
@@ -270,7 +327,8 @@ class BeeWeekApp(ctk.CTk):
             self.card_aulas_val.configure(text=str(total_aulas))
             
             res_horarios = self.db_client.table("horarios").select("*", count="exact").execute()
-            total_horarios = res_horarios.count if res_horarios.count is not None else len(res_horarios.data)
+            horarios = res_horarios.data or []
+            total_horarios = res_horarios.count if res_horarios.count is not None else len(horarios)
             self.card_horarios_val.configure(text=str(total_horarios))
             self.lbl_estado_conexion.configure(text="Datos actualizados desde Supabase.", text_color="#15803d")
         except Exception:
@@ -280,6 +338,16 @@ class BeeWeekApp(ctk.CTk):
                 text="No se pudieron cargar las métricas. Revisa la conexión y pulsa Actualizar datos.",
                 text_color="#b42333",
             )
+            self._mostrar_resumen_horario([], "No se pudo cargar el horario. Pulsa Actualizar datos.")
+            return
+        if not horarios:
+            self._mostrar_resumen_horario([])
+            return
+        try:
+            materias = self.db_client.table("materias").select("id,nombre").execute().data or []
+            self._mostrar_resumen_horario(resumir_horarios(horarios, materias))
+        except Exception:
+            self._mostrar_resumen_horario([], "No se pudieron cargar las materias del horario.")
 
     def cambiar_vista(self, nombre_vista):
         if self.rol_actual != "Administrador" and nombre_vista not in ("dashboard", "calendario"):
@@ -291,6 +359,9 @@ class BeeWeekApp(ctk.CTk):
             vista.pack_forget()
         vista_activa = self.vistas[nombre_vista]
         vista_activa.pack(fill="both", expand=True)
+        if nombre_vista == "dashboard":
+            self.actualizar_metricas()
+            return
         # Los módulos nuevos ya cargan sus datos en __init__.
         if nueva:
             return
