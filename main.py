@@ -60,6 +60,9 @@ class BeeWeekApp(ctk.CTk):
         self.auth_controller = AuthController(self.db_client)
         self.horario_controller = HorarioController(self.db_client)
         self.academico_controller = AcademicoController(self.db_client)
+        self.horario_controller.suscribir(self._actualizar_inicio_tras_horario)
+        self.horario_controller.suscribir(self._actualizar_calendario_tras_horario)
+        self.horario_controller.suscribir(self._invalidar_reporte_tras_horario)
 
         self.sidebar_frame = None
         self.content_area = None
@@ -375,6 +378,20 @@ class BeeWeekApp(ctk.CTk):
             vista_activa.cargar_docentes()
         elif hasattr(vista_activa, "cargar_estudiantes"):
             vista_activa.cargar_estudiantes()
+
+    def _actualizar_inicio_tras_horario(self, _cambio):
+        if self.rol_actual is not None and "dashboard" in self.vistas:
+            self.actualizar_metricas()
+
+    def _actualizar_calendario_tras_horario(self, _cambio):
+        calendario = self.vistas.get("calendario")
+        if calendario is not None:
+            calendario.cargar_horarios()
+
+    def _invalidar_reporte_tras_horario(self, _cambio):
+        reportes = self.vistas.get("reportes")
+        if reportes is not None:
+            reportes._invalidar_reporte()
 
     def cerrar_sesion(self):
         """Cierra la sesión actual y regresa a la pantalla de login."""

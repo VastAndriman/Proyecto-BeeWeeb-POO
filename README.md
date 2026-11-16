@@ -62,6 +62,15 @@ La implementación está en `patrones_creacionales_beeweek.py`. Se puede ejecuta
 ni cambios en la base. Las pruebas de integración local están en
 `tests/test_patrones_creacionales.py`.
 
+## Patrón de comportamiento: Observer
+
+`HorarioController` avisa a sus observadores cuando Supabase confirma la
+creación, edición o eliminación de un horario. `BeeWeekApp` suscribe tres
+acciones: actualizar Inicio, sincronizar el Calendario si ya está abierto e
+invalidar el reporte anterior para no exportar datos desactualizados. Una
+operación rechazada no genera aviso. Los observadores se registran con
+`suscribir()` y pueden retirarse con `desuscribir()`.
+
 El acceso a las tablas academicas requiere una sesion iniciada y permisos por
 rol. Como el registro permite un correo institucional sin verificar su
 existencia, usa datos ficticios para la demostracion. La aplicacion tampoco

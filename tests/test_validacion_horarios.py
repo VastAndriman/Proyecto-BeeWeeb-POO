@@ -63,6 +63,43 @@ class ValidacionHorariosTests(unittest.TestCase):
         self.assertIn("docente", mensaje)
         self.horarios.insert.assert_not_called()
 
+    def test_observadores_reciben_solo_cambios_guardados(self):
+        observador = Mock()
+        self.controller.suscribir(observador)
+        self.controller.suscribir(observador)
+
+        ok, _ = self.controller.validar_y_crear_horario(**self.datos)
+        self.assertTrue(ok)
+        observador.assert_called_once_with("creado")
+
+        ok, _ = self.controller.actualizar_horario(7, **self.datos)
+        self.assertTrue(ok)
+        self.controller.eliminar_horario(7)
+        self.assertEqual([call.args[0] for call in observador.call_args_list],
+                         ["creado", "editado", "eliminado"])
+
+        self.controller.desuscribir(observador)
+        self.controller.eliminar_horario(8)
+        self.assertEqual(observador.call_count, 3)
+
+    def test_rechazo_no_notifica_y_fallo_de_vista_no_cancela_guardado(self):
+        observador = Mock()
+        observador.side_effect = RuntimeError("vista cerrada")
+        self.controller.suscribir(observador)
+        otro = Mock()
+        self.controller.suscribir(otro)
+        self.datos.update(hora_inicio="11:00", hora_fin="10:00")
+
+        ok, _ = self.controller.validar_y_crear_horario(**self.datos)
+        self.assertFalse(ok)
+        observador.assert_not_called()
+
+        self.datos.update(hora_inicio="10:00", hora_fin="11:00")
+        with self.assertLogs("controladores.horario_controller", level="ERROR"):
+            ok, _ = self.controller.validar_y_crear_horario(**self.datos)
+        self.assertTrue(ok)
+        otro.assert_called_once_with("creado")
+
     def test_rechaza_horas_invertidas_antes_de_consultar(self):
         self.datos.update(hora_inicio="11:00", hora_fin="10:00")
 

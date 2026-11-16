@@ -1,4 +1,5 @@
 from datetime import time
+import logging
 
 from conexion.supabase_client import SupabaseConnection
 from patrones_creacionales_beeweek import HorarioBuilder
@@ -12,6 +13,25 @@ class HorarioController:
         (por ejemplo, mock para pruebas o cliente real de Supabase).
         """
         self.db = db_client if db_client is not None else SupabaseConnection.get_client()
+        self._observadores = []
+
+    def suscribir(self, observador):
+        """Registra una reacción a cambios confirmados de horarios."""
+        if observador not in self._observadores:
+            self._observadores.append(observador)
+
+    def desuscribir(self, observador):
+        if observador in self._observadores:
+            self._observadores.remove(observador)
+
+    def _notificar(self, cambio):
+        for observador in tuple(self._observadores):
+            try:
+                observador(cambio)
+            except Exception:
+                logging.getLogger(__name__).exception(
+                    "No se pudo actualizar una vista después de cambiar un horario"
+                )
 
     @classmethod
     def _get_instancia_defecto(cls):
@@ -165,6 +185,7 @@ class HorarioController:
         nuevo_horario = horario.para_guardar()
         
         client.table("horarios").insert(nuevo_horario).execute()
+        inst._notificar("creado")
         return True, "¡Horario registrado exitosamente sin cruces!"
 
     def actualizar_horario(self, horario_id, *, dia, hora_inicio, hora_fin,
@@ -177,6 +198,7 @@ class HorarioController:
                        .materia(materia_id).docente(docente_id)
                        .aula(aula_id).curso(curso_id).construir())
             self.db.table("horarios").update(horario.para_guardar()).eq("id", horario_id).execute()
+            self._notificar("editado")
             return True, "Horario actualizado."
         except ValueError as error:
             return False, str(error)
@@ -185,4 +207,5 @@ class HorarioController:
         if not isinstance(horario_id, int) or horario_id <= 0:
             return False, "Selecciona un horario válido."
         self.db.table("horarios").delete().eq("id", horario_id).execute()
+        self._notificar("eliminado")
         return True, "Horario eliminado."

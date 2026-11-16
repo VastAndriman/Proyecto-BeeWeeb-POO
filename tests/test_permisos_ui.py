@@ -6,6 +6,23 @@ from main import BeeWeekApp
 
 
 class PermisosUiTests(unittest.TestCase):
+    def test_cambio_de_horario_actualiza_vistas_abiertas(self):
+        calendario = Mock()
+        reportes = Mock()
+        app = SimpleNamespace(
+            rol_actual="Administrador",
+            vistas={"dashboard": Mock(), "calendario": calendario, "reportes": reportes},
+            actualizar_metricas=Mock(),
+        )
+
+        BeeWeekApp._actualizar_inicio_tras_horario(app, "creado")
+        BeeWeekApp._actualizar_calendario_tras_horario(app, "creado")
+        BeeWeekApp._invalidar_reporte_tras_horario(app, "creado")
+
+        app.actualizar_metricas.assert_called_once_with()
+        calendario.cargar_horarios.assert_called_once_with()
+        reportes._invalidar_reporte.assert_called_once_with()
+
     def test_modulo_se_crea_al_abrirlo_y_no_se_recarga_dos_veces(self):
         dashboard = SimpleNamespace(pack=Mock(), pack_forget=Mock())
         calendario = SimpleNamespace(pack=Mock(), pack_forget=Mock(), cargar_horarios=Mock())
