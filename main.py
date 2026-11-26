@@ -21,6 +21,7 @@ from controladores.aulas_controller import AulasController
 from controladores.personas_controller import DocentesController, EstudiantesController
 from controladores.dashboard_controller import DashboardController, resumir_horarios
 from conexion.supabase_client import SupabaseConnection
+from componentes.tareas_ui import iniciar_tarea
 
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme(os.path.join(os.path.dirname(__file__), "assets", "lavanda_theme.json"))
@@ -240,8 +241,11 @@ class BeeWeekApp(ctk.CTk):
         card2, self.card_horarios_val = self._crear_tarjeta(cards_frame, "Horarios Activos", "#15803d")
         card2.pack(side="left", padx=15, expand=True, fill="both")
         
-        btn_refresh = ctk.CTkButton(parent, text="Actualizar datos", command=self.actualizar_metricas, fg_color="#7256ac")
-        btn_refresh.pack(anchor="w", padx=30, pady=10)
+        self.btn_actualizar_metricas = ctk.CTkButton(
+            parent, text="Actualizar datos", command=self.actualizar_metricas,
+            fg_color="#7256ac",
+        )
+        self.btn_actualizar_metricas.pack(anchor="w", padx=30, pady=10)
 
         self.lbl_estado_conexion = ctk.CTkLabel(parent, text="Esperando sincronización...", text_color="#786f95")
         self.lbl_estado_conexion.pack(anchor="w", padx=30)
@@ -308,6 +312,55 @@ class BeeWeekApp(ctk.CTk):
         return card, lbl_valor
 
     def actualizar_metricas(self):
+        if hasattr(self, "after"):
+            if getattr(self, "_metricas_pendientes", False):
+                self._metricas_recargar = True
+                return
+            self._metricas_pendientes = True
+            self.btn_actualizar_metricas.configure(state="disabled")
+            self.lbl_estado_conexion.configure(text="Cargando datos...", text_color="#7256ac")
+
+            def consultar():
+                total_aulas, total_horarios, horarios = self.dashboard_controller.obtener_metricas()
+                try:
+                    resumen = self.dashboard_controller.obtener_resumen(horarios) if horarios else []
+                except Exception:
+                    resumen = None
+                return total_aulas, total_horarios, horarios, resumen
+
+            def terminar(resultado):
+                self._metricas_pendientes = False
+                self.btn_actualizar_metricas.configure(state="normal")
+                total_aulas, total_horarios, horarios, resumen = resultado
+                self.card_aulas_val.configure(text=str(total_aulas))
+                self.card_horarios_val.configure(text=str(total_horarios))
+                self.lbl_estado_conexion.configure(
+                    text="Datos actualizados desde Supabase.", text_color="#15803d",
+                )
+                if resumen is None:
+                    self._mostrar_resumen_horario([], "No se pudieron cargar las materias del horario.")
+                else:
+                    self._mostrar_resumen_horario(resumen)
+                if getattr(self, "_metricas_recargar", False) and self.rol_actual is not None:
+                    self._metricas_recargar = False
+                    self.actualizar_metricas()
+
+            def fallar(_error):
+                self._metricas_pendientes = False
+                self.btn_actualizar_metricas.configure(state="normal")
+                self.card_aulas_val.configure(text="Err")
+                self.card_horarios_val.configure(text="Err")
+                self.lbl_estado_conexion.configure(
+                    text="No se pudieron cargar las métricas. Revisa la conexión y pulsa Actualizar datos.",
+                    text_color="#b42333",
+                )
+                self._mostrar_resumen_horario([], "No se pudo cargar el horario. Pulsa Actualizar datos.")
+                if getattr(self, "_metricas_recargar", False) and self.rol_actual is not None:
+                    self._metricas_recargar = False
+                    self.actualizar_metricas()
+
+            iniciar_tarea(self, consultar, terminar, fallar)
+            return
         try:
             total_aulas, total_horarios, horarios = self.dashboard_controller.obtener_metricas()
             self.card_aulas_val.configure(text=str(total_aulas))

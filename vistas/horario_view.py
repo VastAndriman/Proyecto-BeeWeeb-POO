@@ -2,6 +2,9 @@ import customtkinter as ctk
 from tkinter import messagebox
 from controladores.horario_controller import HorarioController
 from modelos.estado_horario import estado_horario
+from componentes.tareas_ui import iniciar_tarea
+from controladores.filtros_horario import filtrar_horarios
+from controladores.disponibilidad_horario import evaluar_disponibilidad
 
 class HorarioView(ctk.CTkFrame):
     def __init__(self, master, horario_controller=None):
@@ -14,6 +17,7 @@ class HorarioView(ctk.CTkFrame):
         self.materias_map = {}
         self.cursos_map = {}
         self.horarios_map = {}
+        self._horarios_historial = []
         self.historial_disponible = False
         self._materias_lookup = {}
         self._cursos_lookup = {}
@@ -79,6 +83,7 @@ class HorarioView(ctk.CTkFrame):
             self.col_left,
             values=["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"],
             state="readonly",
+            command=lambda _valor: self._actualizar_disponibilidad(),
             height=34
         )
         self.combo_dia.set("Lunes")
@@ -89,7 +94,7 @@ class HorarioView(ctk.CTkFrame):
         self.combo_h_inicio = ctk.CTkComboBox(
             self.col_left, 
             values=["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"],
-            height=34
+            height=34, command=lambda _valor: self._actualizar_disponibilidad(),
         )
         self.combo_h_inicio.set("08:00")
         self.combo_h_inicio.pack(fill="x", pady=(0, 12))
@@ -99,7 +104,7 @@ class HorarioView(ctk.CTkFrame):
         self.combo_h_fin = ctk.CTkComboBox(
             self.col_left,
             values=["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"],
-            height=34
+            height=34, command=lambda _valor: self._actualizar_disponibilidad(),
         )
         self.combo_h_fin.set("10:00")
         self.combo_h_fin.pack(fill="x", pady=(0, 12))
@@ -132,7 +137,7 @@ class HorarioView(ctk.CTkFrame):
         self.combo_docente = ctk.CTkComboBox(
             self.col_right,
             values=["Cargando docentes..."],
-            height=34
+            height=34, command=lambda _valor: self._actualizar_disponibilidad(),
         )
         self.combo_docente.pack(fill="x", pady=(0, 12))
 
@@ -172,8 +177,14 @@ class HorarioView(ctk.CTkFrame):
         ctk.CTkLabel(self.action_frame, text="Guardar como:", text_color="#4b3f76").pack(anchor="w")
         self.combo_estado_nuevo = ctk.CTkOptionMenu(
             self.action_frame, values=["Publicado", "Borrador"], fg_color="#7256ac",
+            command=lambda _valor: self._actualizar_disponibilidad(),
         )
         self.combo_estado_nuevo.pack(anchor="w", pady=(3, 8))
+
+        self.lbl_disponibilidad = ctk.CTkLabel(
+            self.action_frame, text="Cargando disponibilidad...", text_color="#786f95",
+        )
+        self.lbl_disponibilidad.pack(anchor="w", pady=(0, 6))
 
         self.btn_crear = ctk.CTkButton(
             self.action_frame, 
@@ -185,6 +196,8 @@ class HorarioView(ctk.CTkFrame):
             command=self.crear_horario
         )
         self.btn_crear.pack(fill="x", pady=(5, 5))
+        self.combo_h_inicio.bind("<KeyRelease>", lambda _evento: self._actualizar_disponibilidad())
+        self.combo_h_fin.bind("<KeyRelease>", lambda _evento: self._actualizar_disponibilidad())
 
         self.edit_card = ctk.CTkFrame(self.scroll_container, corner_radius=12, fg_color="#ffffff")
         self.edit_card.pack(fill="x", pady=(0, 12), padx=5)
@@ -208,16 +221,23 @@ class HorarioView(ctk.CTkFrame):
             self.edit_card, values=["Selecciona un horario"], fg_color="#7256ac",
         )
         self.combo_estado_cambio.pack(anchor="w", padx=20, pady=(0, 8))
-        ctk.CTkButton(
+        self.btn_cambiar_estado = ctk.CTkButton(
             self.edit_card, text="Cambiar estado", command=self.cambiar_estado_horario,
             fg_color="#7256ac",
-        ).pack(anchor="w", padx=20, pady=(0, 10))
+        )
+        self.btn_cambiar_estado.pack(anchor="w", padx=20, pady=(0, 10))
         botones_edicion = ctk.CTkFrame(self.edit_card, fg_color="transparent")
         botones_edicion.pack(fill="x", padx=20, pady=(0, 15))
-        ctk.CTkButton(botones_edicion, text="Guardar cambios", command=self.actualizar_horario,
-                      fg_color="#7256ac").pack(side="left", padx=(0, 8))
-        ctk.CTkButton(botones_edicion, text="Eliminar horario", command=self.eliminar_horario,
-                      fg_color="#b42333", hover_color="#8b1c2a").pack(side="left")
+        self.btn_guardar_cambios = ctk.CTkButton(
+            botones_edicion, text="Guardar cambios", command=self.actualizar_horario,
+            fg_color="#7256ac",
+        )
+        self.btn_guardar_cambios.pack(side="left", padx=(0, 8))
+        self.btn_eliminar_horario = ctk.CTkButton(
+            botones_edicion, text="Eliminar horario", command=self.eliminar_horario,
+            fg_color="#b42333", hover_color="#8b1c2a",
+        )
+        self.btn_eliminar_horario.pack(side="left")
         ctk.CTkButton(
             botones_edicion, text="Dejar de editar", command=self.dejar_de_editar,
             fg_color="#eee9fb", hover_color="#d6c9f3", text_color="#4b3f76",
@@ -237,6 +257,27 @@ class HorarioView(ctk.CTkFrame):
             text="Horarios Registrados en el Sistema",
             font=("Arial", 15, "bold")
         ).pack(anchor="w", padx=20, pady=(15, 5))
+
+        filtros = ctk.CTkFrame(self.tabla_frame, fg_color="transparent")
+        filtros.pack(fill="x", padx=20, pady=(0, 8))
+        self.entry_buscar_horario = ctk.CTkEntry(
+            filtros, placeholder_text="Buscar materia, docente, curso o aula", width=280,
+        )
+        self.entry_buscar_horario.pack(side="left", padx=(0, 8))
+        self.entry_buscar_horario.bind("<KeyRelease>", lambda _evento: self._filtrar_historial())
+        self.combo_filtro_dia = ctk.CTkOptionMenu(
+            filtros, values=["Todos los días", "Lunes", "Martes", "Miércoles",
+                             "Jueves", "Viernes", "Sábado"],
+            command=lambda _valor: self._filtrar_historial(), fg_color="#7256ac",
+        )
+        self.combo_filtro_dia.pack(side="left", padx=(0, 8))
+        self.combo_filtro_estado = ctk.CTkOptionMenu(
+            filtros, values=["Todos los estados", "Borrador", "Publicado", "Cancelado"],
+            command=lambda _valor: self._filtrar_historial(), fg_color="#7256ac",
+        )
+        self.combo_filtro_estado.pack(side="left")
+        self.lbl_total_horarios = ctk.CTkLabel(self.tabla_frame, text="", text_color="#786f95")
+        self.lbl_total_horarios.pack(anchor="w", padx=20)
 
         self.textbox_horarios = ctk.CTkTextbox(
             self.tabla_frame,
@@ -262,6 +303,8 @@ class HorarioView(ctk.CTkFrame):
                 text="Selecciona un aula registrada para conocer su capacidad",
                 text_color="#786f95"
             )
+        if hasattr(self, "_actualizar_disponibilidad"):
+            self._actualizar_disponibilidad()
 
     def al_seleccionar_curso(self, seleccion):
         """Muestra la matrícula guardada del curso sin permitir cambiarla aquí."""
@@ -271,18 +314,84 @@ class HorarioView(ctk.CTkFrame):
         if info.get("num_estudiantes") is not None:
             self.entry_estudiantes.insert(0, str(info["num_estudiantes"]))
         self.entry_estudiantes.configure(state="readonly")
+        if hasattr(self, "_actualizar_disponibilidad"):
+            self._actualizar_disponibilidad()
 
-    def cargar_datos_dinamicos(self):
+    def _actualizar_disponibilidad(self):
+        if not hasattr(self, "lbl_disponibilidad"):
+            return
+        if not getattr(self, "historial_disponible", False):
+            self.lbl_disponibilidad.configure(text="Cargando disponibilidad...", text_color="#786f95")
+            return
+        aula = self.aulas_map.get(self.combo_aula.get(), {})
+        curso = self.cursos_map.get(self.combo_curso.get(), {})
+        seleccionado = self.horarios_map.get(self.combo_horario.get())
+        estado = (seleccionado.get("estado", "Publicado") if seleccionado
+                  else self.combo_estado_nuevo.get())
+        disponible, mensaje = evaluar_disponibilidad(
+            dia=self.combo_dia.get(), inicio=self.combo_h_inicio.get(),
+            fin=self.combo_h_fin.get(), aula_id=aula.get("id"),
+            docente_id=self._resolver_id(self.combo_docente.get(), self.docentes_map),
+            curso_id=curso.get("id"), estudiantes=curso.get("num_estudiantes"),
+            capacidad=aula.get("capacidad"),
+            horarios=getattr(self, "_horarios_historial", []), estado=estado,
+            excluir_id=seleccionado.get("id") if seleccionado else None,
+        )
+        self.lbl_disponibilidad.configure(
+            text=mensaje, text_color="#15803d" if disponible else "#b42333",
+        )
+
+    def cargar_datos_dinamicos(self, _datos=None, _error=None):
         """Carga aulas, docentes, materias y cursos en los selectores desplegables"""
+        if _datos is None and _error is None and hasattr(self, "after"):
+            if getattr(self, "_carga_pendiente", False):
+                return
+            self._carga_pendiente = True
+            self.historial_disponible = False
+            self.btn_crear.configure(state="disabled")
+            self.btn_recargar.configure(state="disabled")
+            for boton in (self.btn_guardar_cambios, self.btn_eliminar_horario,
+                          self.btn_cambiar_estado):
+                boton.configure(state="disabled")
+            self.lbl_mensaje.configure(text="Cargando datos de Supabase...", text_color="#7256ac")
+
+            def consultar():
+                return (
+                    self.horario_controller.obtener_docentes(estricto=True),
+                    self.horario_controller.obtener_aulas(estricto=True),
+                    self.horario_controller.obtener_materias(estricto=True),
+                    self.horario_controller.obtener_cursos(estricto=True),
+                    self.horario_controller.obtener_horarios_registrados(estricto=True),
+                )
+
+            def terminar(datos):
+                self._carga_pendiente = False
+                self.btn_recargar.configure(state="normal")
+                self.cargar_datos_dinamicos(_datos=datos)
+
+            def fallar(error):
+                self._carga_pendiente = False
+                self.btn_recargar.configure(state="normal")
+                self.cargar_datos_dinamicos(_error=error)
+
+            iniciar_tarea(self, consultar, terminar, fallar)
+            return
         self.historial_disponible = False
         self.lbl_mensaje.configure(text="Sincronizando listas con Supabase...", text_color="#7256ac")
 
         try:
-            docentes = self.horario_controller.obtener_docentes(estricto=True)
-            aulas = self.horario_controller.obtener_aulas(estricto=True)
-            materias = self.horario_controller.obtener_materias(estricto=True)
-            cursos = self.horario_controller.obtener_cursos(estricto=True)
+            if _error is not None:
+                raise _error
+            if _datos is None:
+                docentes = self.horario_controller.obtener_docentes(estricto=True)
+                aulas = self.horario_controller.obtener_aulas(estricto=True)
+                materias = self.horario_controller.obtener_materias(estricto=True)
+                cursos = self.horario_controller.obtener_cursos(estricto=True)
+                horarios = None
+            else:
+                docentes, aulas, materias, cursos, horarios = _datos
         except Exception:
+            self._horarios_historial = []
             self._materias_lookup = {}
             self._cursos_lookup = {}
             self._aulas_lookup = {}
@@ -304,6 +413,10 @@ class HorarioView(ctk.CTkFrame):
             self.textbox_horarios.delete("0.0", "end")
             self.textbox_horarios.insert("end", "No se pudieron cargar los horarios.")
             self.btn_crear.configure(state="disabled")
+            for nombre in ("btn_guardar_cambios", "btn_eliminar_horario", "btn_cambiar_estado"):
+                boton = getattr(self, nombre, None)
+                if boton is not None:
+                    boton.configure(state="disabled")
             self.lbl_mensaje.configure(
                 text="No se pudieron sincronizar los datos. Revisa tu conexión y pulsa Actualizar Opciones.",
                 text_color="#b42333",
@@ -382,12 +495,16 @@ class HorarioView(ctk.CTkFrame):
             self.al_seleccionar_curso("")
 
         # 5. Cargar Horarios Registrados en el historial
-        historial_ok = self.refrescar_historial_horarios()
+        historial_ok = self.refrescar_historial_horarios(horarios=horarios)
         faltantes = [nombre for nombre, opciones in (
             ("docentes", docentes_vals), ("aulas", aulas_vals),
             ("materias", materias_vals), ("cursos", cursos_vals)
         ) if not opciones]
         self.btn_crear.configure(state="disabled" if faltantes or not historial_ok else "normal")
+        for nombre in ("btn_guardar_cambios", "btn_eliminar_horario", "btn_cambiar_estado"):
+            boton = getattr(self, nombre, None)
+            if boton is not None:
+                boton.configure(state="normal" if historial_ok else "disabled")
         if not historial_ok:
             self.lbl_mensaje.configure(
                 text="No se pudo cargar el historial de horarios. Revisa tu conexión y pulsa Actualizar Opciones.",
@@ -400,8 +517,12 @@ class HorarioView(ctk.CTkFrame):
             )
         else:
             self.lbl_mensaje.configure(text="Datos sincronizados correctamente.", text_color="#15803d")
+        mensaje_guardado = getattr(self, "_mensaje_tras_carga", None)
+        if mensaje_guardado and historial_ok:
+            self._mensaje_tras_carga = None
+            self.lbl_mensaje.configure(text=mensaje_guardado, text_color="#15803d")
 
-    def refrescar_historial_horarios(self):
+    def refrescar_historial_horarios(self, horarios=None):
         """Muestra los horarios ya registrados en la base de datos con nombres legibles"""
         self.historial_disponible = False
         self.textbox_horarios.delete("0.0", "end")
@@ -410,26 +531,55 @@ class HorarioView(ctk.CTkFrame):
         self.combo_horario.configure(values=[aviso])
         self.combo_horario.set(aviso)
         try:
-            horarios = self.horario_controller.obtener_horarios_registrados(estricto=True)
+            if horarios is None:
+                horarios = self.horario_controller.obtener_horarios_registrados(estricto=True)
         except Exception:
+            self._horarios_historial = []
             self.textbox_horarios.insert("end", "No se pudo cargar el historial de horarios.\n")
             return False
+        self._horarios_historial = horarios
+        HorarioView._filtrar_historial(self)
+        self.historial_disponible = True
+        if hasattr(self, "_actualizar_disponibilidad"):
+            self._actualizar_disponibilidad()
+        return True
+
+    def _filtrar_historial(self):
+        horarios = getattr(self, "_horarios_historial", [])
+        nombres = {
+            "aula": getattr(self, "_aulas_lookup", {}),
+            "docente": getattr(self, "_docentes_lookup", {}),
+            "materia": getattr(self, "_materias_lookup", {}),
+            "curso": getattr(self, "_cursos_lookup", {}),
+        }
+        entrada = getattr(self, "entry_buscar_horario", None)
+        combo_dia = getattr(self, "combo_filtro_dia", None)
+        combo_estado = getattr(self, "combo_filtro_estado", None)
+        visibles = filtrar_horarios(
+            horarios,
+            texto=entrada.get() if entrada is not None else "",
+            dia=combo_dia.get() if combo_dia is not None else "Todos los días",
+            estado=combo_estado.get() if combo_estado is not None else "Todos los estados",
+            nombres=nombres,
+        )
+        if hasattr(self, "lbl_total_horarios"):
+            self.lbl_total_horarios.configure(text=f"Mostrando {len(visibles)} de {len(horarios)} horarios")
+        self.textbox_horarios.delete("0.0", "end")
         self.horarios_map = {
             f"ID {h['id']} · {h.get('dia', '')} {str(h.get('hora_inicio', ''))[:5]}-{str(h.get('hora_fin', ''))[:5]} · {h.get('estado', 'Publicado')}": h
-            for h in horarios if h.get("id") is not None
+            for h in visibles if h.get("id") is not None
         }
         self.combo_horario.configure(values=list(self.horarios_map) or ["Selecciona un horario para editar o eliminar"])
         self.combo_horario.set("Selecciona un horario para editar o eliminar")
-        self.historial_disponible = True
-        if not horarios:
-            self.textbox_horarios.insert("end", "No hay horarios registrados en el sistema.\n")
-            return True
+        if not visibles:
+            self.textbox_horarios.insert("end", "No hay horarios para los filtros seleccionados.\n")
+            return
 
         encabezado = f"{'DÍA':<10} | {'HORA':<13} | {'AULA':<12} | {'DOCENTE':<20} | {'MATERIA':<28} | {'CURSO':<18} | ESTADO\n"
         encabezado += "=" * 125 + "\n"
         self.textbox_horarios.insert("end", encabezado)
 
-        for h in horarios:
+        for h in visibles:
             dia = str(h.get('dia', ''))[:10]
             h_ini = str(h.get('hora_inicio', ''))[:5]
             h_fin = str(h.get('hora_fin', ''))[:5]
@@ -447,7 +597,6 @@ class HorarioView(ctk.CTkFrame):
 
             linea = f"{dia:<10} | {hora_str:<13} | {aula_nom:<12} | {docente_nom:<20} | {materia_nom:<28} | {curso_nom:<18} | {h.get('estado', 'Publicado')}\n"
             self.textbox_horarios.insert("end", linea)
-        return True
 
     def _resolver_id(self, valor, mapa):
         """Acepta únicamente una opción cargada desde la base de datos."""
@@ -486,6 +635,7 @@ class HorarioView(ctk.CTkFrame):
                 combo.set(etiqueta)
         self.al_seleccionar_aula(self.combo_aula.get())
         self.al_seleccionar_curso(self.combo_curso.get())
+        self._actualizar_disponibilidad()
 
     def dejar_de_editar(self):
         self.combo_horario.set("Selecciona un horario para editar o eliminar")
@@ -514,6 +664,8 @@ class HorarioView(ctk.CTkFrame):
                   "Actualiza las opciones antes de registrar un horario nuevo."),
             text_color="#7256ac" if listo else "#b42333",
         )
+        if hasattr(self, "_actualizar_disponibilidad"):
+            self._actualizar_disponibilidad()
 
     def _datos_formulario(self):
         datos = {
@@ -532,6 +684,9 @@ class HorarioView(ctk.CTkFrame):
     def _mostrar_resultado_horario(self, exito, mensaje):
         if not exito:
             self.lbl_mensaje.configure(text=f"{mensaje}", text_color="#b42333")
+        elif hasattr(self, "after"):
+            self._mensaje_tras_carga = mensaje
+            self.cargar_datos_dinamicos()
         elif self.refrescar_historial_horarios():
             self.lbl_mensaje.configure(text=f"{mensaje}", text_color="#15803d")
         else:
@@ -539,6 +694,31 @@ class HorarioView(ctk.CTkFrame):
                 text=f"{mensaje} No se pudo actualizar el historial; pulsa Actualizar Opciones.",
                 text_color="#9a6700",
             )
+
+    def _ejecutar_cambio(self, trabajo):
+        if getattr(self, "_operacion_pendiente", False):
+            return
+        self._operacion_pendiente = True
+        botones = (self.btn_crear, self.btn_guardar_cambios,
+                   self.btn_eliminar_horario, self.btn_cambiar_estado)
+        estados_anteriores = {boton: boton.cget("state") for boton in botones}
+        for boton in botones:
+            boton.configure(state="disabled")
+        self.lbl_mensaje.configure(text="Guardando en Supabase...", text_color="#7256ac")
+
+        def terminar(resultado):
+            self._operacion_pendiente = False
+            for boton in botones:
+                boton.configure(state=estados_anteriores[boton])
+            self._mostrar_resultado_horario(*resultado)
+
+        def fallar(error):
+            self._operacion_pendiente = False
+            for boton in botones:
+                boton.configure(state=estados_anteriores[boton])
+            self.lbl_mensaje.configure(text=f"No se pudo guardar: {error}", text_color="#b42333")
+
+        iniciar_tarea(self, trabajo, terminar, fallar)
 
     def actualizar_horario(self):
         horario = self.horarios_map.get(self.combo_horario.get())
@@ -549,9 +729,9 @@ class HorarioView(ctk.CTkFrame):
             self.lbl_mensaje.configure(text="Un horario cancelado no se puede editar.", text_color="#b42333")
             return
         try:
-            exito, mensaje = self.horario_controller.actualizar_horario(
-                int(horario["id"]), **self._datos_formulario())
-            self._mostrar_resultado_horario(exito, mensaje)
+            datos = self._datos_formulario()
+            self._ejecutar_cambio(lambda: self.horario_controller.actualizar_horario(
+                int(horario["id"]), **datos))
         except Exception as error:
             self.lbl_mensaje.configure(text=f"No se pudo actualizar: {error}", text_color="#b42333")
 
@@ -563,8 +743,7 @@ class HorarioView(ctk.CTkFrame):
         if not messagebox.askyesno("Eliminar horario", "¿Eliminar el horario seleccionado?", parent=self):
             return
         try:
-            exito, mensaje = self.horario_controller.eliminar_horario(int(horario["id"]))
-            self._mostrar_resultado_horario(exito, mensaje)
+            self._ejecutar_cambio(lambda: self.horario_controller.eliminar_horario(int(horario["id"])))
         except Exception as error:
             self.lbl_mensaje.configure(text=f"No se pudo eliminar: {error}", text_color="#b42333")
 
@@ -574,10 +753,9 @@ class HorarioView(ctk.CTkFrame):
             self.lbl_mensaje.configure(text="Selecciona un horario.", text_color="#b42333")
             return
         try:
-            exito, mensaje = self.horario_controller.cambiar_estado(
-                int(horario["id"]), self.combo_estado_cambio.get(),
-            )
-            self._mostrar_resultado_horario(exito, mensaje)
+            destino = self.combo_estado_cambio.get()
+            self._ejecutar_cambio(lambda: self.horario_controller.cambiar_estado(
+                int(horario["id"]), destino))
         except Exception as error:
             self.lbl_mensaje.configure(text=f"No se pudo cambiar el estado: {error}", text_color="#b42333")
 
@@ -615,17 +793,12 @@ class HorarioView(ctk.CTkFrame):
 
         try:
             # Validación y creación en la base de datos a través del controlador
-            exito, mensaje = self.horario_controller.validar_y_crear_horario(
-                dia=dia,
-                hora_inicio=h_inicio,
-                hora_fin=h_fin,
-                materia_id=int(materia_id),
-                docente_id=int(docente_id),
-                aula_id=int(aula_id),
-                curso_id=int(curso_id),
+            datos = dict(
+                dia=dia, hora_inicio=h_inicio, hora_fin=h_fin,
+                materia_id=int(materia_id), docente_id=int(docente_id),
+                aula_id=int(aula_id), curso_id=int(curso_id),
                 estado=self.combo_estado_nuevo.get(),
             )
-
-            self._mostrar_resultado_horario(exito, mensaje)
+            self._ejecutar_cambio(lambda: self.horario_controller.validar_y_crear_horario(**datos))
         except Exception as e:
             self.lbl_mensaje.configure(text=f"Error al procesar el horario: {e}", text_color="#b42333")

@@ -3,6 +3,7 @@ import tkinter as tk
 import re
 import customtkinter as ctk
 from controladores.auth_controller import AuthController
+from componentes.tareas_ui import iniciar_tarea
 
 
 class LoginView(ctk.CTkFrame):
@@ -534,6 +535,8 @@ class LoginView(ctk.CTkFrame):
             self.entry_password.configure(show="*")
 
     def _ejecutar_login(self):
+        if self.btn_login.cget("state") == "disabled":
+            return
         usuario = self.entry_usuario.get().strip()
         contrasena = self.entry_password.get()
 
@@ -548,41 +551,32 @@ class LoginView(ctk.CTkFrame):
             state="disabled", text="Validando..."
         )
         self.lbl_mensaje.configure(text="")
-        self.update_idletasks()
-
-        try:
-            exito, mensaje, usuario_obj = (
-                self.auth_controller.iniciar_sesion(
-                    usuario, contrasena
-                )
-            )
-
+        def terminar(resultado):
+            exito, mensaje, usuario_obj = resultado
             if exito:
                 self.lbl_mensaje.configure(
-                    text=f"{mensaje}",
-                    text_color="#16a34a"
+                    text=mensaje, text_color="#16a34a",
                 )
-                self.after(
-                    350,
-                    lambda: self.on_login_success(usuario_obj)
-                )
+                self.after(350, lambda: self.on_login_success(usuario_obj))
             else:
-                self.lbl_mensaje.configure(
-                    text=f"{mensaje}",
-                    text_color="#dc2626"
-                )
+                self.btn_login.configure(state="normal", text="INGRESAR")
+                self.lbl_mensaje.configure(text=mensaje, text_color="#dc2626")
 
-        except Exception:
+        def fallar(_error):
+            self.btn_login.configure(state="normal", text="INGRESAR")
             self.lbl_mensaje.configure(
-                text="Ocurrió un error al iniciar sesión.",
-                text_color="#dc2626"
+                text="Ocurrió un error al iniciar sesión. Revisa la conexión.",
+                text_color="#dc2626",
             )
-        finally:
-            self.btn_login.configure(
-                state="normal", text="INGRESAR"
-            )
+
+        iniciar_tarea(
+            self, lambda: self.auth_controller.iniciar_sesion(usuario, contrasena),
+            terminar, fallar,
+        )
 
     def _ejecutar_registro(self):
+        if self.btn_registrar.cget("state") == "disabled":
+            return
         cedula = self.reg_cedula.get().strip()
         nombre = self.reg_nombre.get().strip()
         apellido = self.reg_apellido.get().strip()
@@ -648,10 +642,8 @@ class LoginView(ctk.CTkFrame):
             state="disabled", text="Registrando..."
         )
         self.lbl_mensaje_reg.configure(text="")
-        self.update_idletasks()
-
-        try:
-            exito, mensaje = self.auth_controller.registrar_usuario(
+        def registrar():
+            return self.auth_controller.registrar_usuario(
                 identificacion=cedula,
                 nombre=nombre,
                 apellido=apellido,
@@ -661,30 +653,25 @@ class LoginView(ctk.CTkFrame):
                 rol=rol
             )
 
+        def terminar(resultado):
+            exito, mensaje = resultado
             if exito:
                 self.lbl_mensaje_reg.configure(
-                    text=f"{mensaje}",
-                    text_color="#16a34a"
+                    text=mensaje, text_color="#16a34a",
                 )
-                self.after(
-                    1200,
-                    lambda: self._ir_a_login_con_datos(username)
-                )
+                self.after(1200, lambda: self._ir_a_login_con_datos(username))
             else:
-                self.lbl_mensaje_reg.configure(
-                    text=f"{mensaje}",
-                    text_color="#dc2626"
-                )
+                self.btn_registrar.configure(state="normal", text="Crear cuenta")
+                self.lbl_mensaje_reg.configure(text=mensaje, text_color="#dc2626")
 
-        except Exception:
+        def fallar(_error):
+            self.btn_registrar.configure(state="normal", text="Crear cuenta")
             self.lbl_mensaje_reg.configure(
-                text="Ocurrió un error al registrar el usuario.",
-                text_color="#dc2626"
+                text="Ocurrió un error al registrar el usuario. Revisa la conexión.",
+                text_color="#dc2626",
             )
-        finally:
-            self.btn_registrar.configure(
-                state="normal", text="Crear cuenta"
-            )
+
+        iniciar_tarea(self, registrar, terminar, fallar)
 
     def _ir_a_login_con_datos(self, username: str):
         self.cambiar_modo("login")

@@ -56,6 +56,24 @@ protección frente a fórmulas; PDF permite compartir el reporte formateado.
 El tipo **Resumen Institucional** agrega aulas, docentes, cursos y horas
 semanales de horarios publicados.
 
+## Uso ágil del horario
+
+Inicio, Calendario, Registro de Horario, Reportes y acceso cargan datos de red
+en segundo plano. La pantalla indica cuándo está cargando y bloquea los
+botones de guardado mientras se envía una operación. En Registro de Horario,
+el historial se puede buscar por materia, docente, curso o aula y filtrar por
+día y estado sin hacer nuevas consultas.
+
+Al elegir día, horas, aula, docente y curso aparece una **vista previa de
+disponibilidad** con el aforo o el primer cruce detectado. Esta vista usa los
+datos cargados; Supabase valida otra vez al guardar para contemplar cambios
+hechos por otra persona.
+
+Para una demostración breve: inicia como Administrador, revisa las métricas,
+busca una materia en el historial, cambia día u hora para ver la disponibilidad,
+abre el calendario y genera el Resumen Institucional en CSV o PDF. Después
+entra como Estudiante y comprueba que solo aparecen las opciones de consulta.
+
 ## Patrones creacionales
 
 - **Singleton:** `SupabaseConnection.get_client()` comparte el cliente de Supabase.

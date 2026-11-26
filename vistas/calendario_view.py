@@ -2,6 +2,7 @@ import customtkinter as ctk
 from datetime import time
 from controladores.horario_controller import HorarioController
 from modelos.estado_horario import estado_horario
+from componentes.tareas_ui import iniciar_tarea
 
 class CalendarioView(ctk.CTkFrame):
     def __init__(self, master, horario_controller=None):
@@ -15,8 +16,8 @@ class CalendarioView(ctk.CTkFrame):
         self.lbl_titulo = ctk.CTkLabel(self.header_frame, text="Horarios - Vista Semanal", font=("Arial", 22, "bold"))
         self.lbl_titulo.pack(side="left")
         
-        btn_refresh = ctk.CTkButton(self.header_frame, text="Sincronizar Calendario", command=self.cargar_horarios, fg_color="#7256ac", hover_color="#5e4497", width=160)
-        btn_refresh.pack(side="right")
+        self.btn_refresh_calendario = ctk.CTkButton(self.header_frame, text="Sincronizar Calendario", command=self.cargar_horarios, fg_color="#7256ac", hover_color="#5e4497", width=160)
+        self.btn_refresh_calendario.pack(side="right")
 
         filtros = ctk.CTkFrame(self, fg_color="transparent")
         filtros.pack(fill="x", padx=30, pady=(0, 8))
@@ -117,7 +118,53 @@ class CalendarioView(ctk.CTkFrame):
             lbl_dia.grid(row=0, column=col_idx, padx=4, pady=5, sticky="nsew")
             self.grid_container.grid_columnconfigure(col_idx, weight=1)
 
-    def cargar_horarios(self, sincronizar=True):
+    def _consultar_calendario(self):
+        materias = self.horario_controller.obtener_materias(estricto=True)
+        aulas = self.horario_controller.obtener_aulas(estricto=True)
+        docentes = self.horario_controller.obtener_docentes(estricto=True)
+        cursos = self.horario_controller.obtener_cursos(estricto=True)
+        horarios = self.horario_controller.obtener_horarios_registrados(estricto=True)
+        return (
+            {str(m.get("id")): m.get("nombre", f"Materia {m.get('id')}") for m in materias},
+            {str(a.get("id")): str(a.get("numero", a.get("id"))) for a in aulas},
+            {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in docentes},
+            {str(c.get("id")): c.get("nombre", "") for c in cursos},
+            [h for h in horarios if estado_horario(h.get("estado", "Publicado")).visible_en_calendario()],
+        )
+
+    def cargar_horarios(self, sincronizar=True, _datos=None, _error=None):
+        cache = getattr(self, "_cache_calendario", None)
+        if _datos is None and _error is None and (sincronizar or cache is None) and hasattr(self, "after"):
+            if getattr(self, "_carga_calendario_pendiente", False):
+                if sincronizar:
+                    self._carga_calendario_repetir = True
+                return
+            self._carga_calendario_pendiente = True
+            self.btn_refresh_calendario.configure(state="disabled")
+            self.lbl_estado.configure(text="Cargando calendario...")
+
+            def terminar(datos):
+                self._carga_calendario_pendiente = False
+                self.btn_refresh_calendario.configure(state="normal")
+                self.cargar_horarios(sincronizar=False, _datos=datos)
+                if getattr(self, "_carga_calendario_repetir", False):
+                    self._carga_calendario_repetir = False
+                    self.cargar_horarios()
+
+            def fallar(error):
+                self._carga_calendario_pendiente = False
+                self.btn_refresh_calendario.configure(state="normal")
+                self.cargar_horarios(sincronizar=False, _error=error)
+                if getattr(self, "_carga_calendario_repetir", False):
+                    self._carga_calendario_repetir = False
+                    self.cargar_horarios()
+
+            iniciar_tarea(self, self._consultar_calendario, terminar, fallar)
+            return
+        if _error is not None:
+            self._cache_calendario = None
+            self.lbl_estado.configure(text="No se pudo cargar el calendario. Revisa tu conexión y vuelve a sincronizar.")
+            return
         self.lbl_estado.configure(text="")
         # Limpiar celdas previas de datos
         for widget in self.grid_container.winfo_children():
@@ -139,16 +186,12 @@ class CalendarioView(ctk.CTkFrame):
 
         # Consultar la base de datos para mapear las clases guardadas
         try:
-            cache = getattr(self, "_cache_calendario", None)
+            cache = _datos if _datos is not None else getattr(self, "_cache_calendario", None)
             if sincronizar or cache is None:
-                self._cache_calendario = None
-                materias_map = {str(m.get("id")): m.get("nombre", f"Materia {m.get('id')}") for m in self.horario_controller.obtener_materias(estricto=True)}
-                aulas_map = {str(a.get("id")): str(a.get("numero", a.get("id"))) for a in self.horario_controller.obtener_aulas(estricto=True)}
-                docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes(estricto=True)}
-                cursos_map = {str(c.get("id")): c.get("nombre", "") for c in self.horario_controller.obtener_cursos(estricto=True)}
-                horarios = [h for h in self.horario_controller.obtener_horarios_registrados(estricto=True)
-                            if estado_horario(h.get("estado", "Publicado")).visible_en_calendario()]
-                self._cache_calendario = (materias_map, aulas_map, docentes_map, cursos_map, horarios)
+                cache = CalendarioView._consultar_calendario(self)
+            self._cache_calendario = cache
+            materias_map, aulas_map, docentes_map, cursos_map, horarios = cache
+            if _datos is not None or sincronizar:
                 if hasattr(self, "combo_filtro_curso"):
                     self.filtro_cursos = {
                         f"{nombre} (ID {identificador})": identificador
@@ -165,9 +208,6 @@ class CalendarioView(ctk.CTkFrame):
                         actual = combo.get()
                         combo.configure(values=[opcion_todos, *opciones])
                         combo.set(actual if actual in opciones else opcion_todos)
-            else:
-                materias_map, aulas_map, docentes_map, cursos_map, horarios = cache
-
             curso_elegido = getattr(self, "filtro_cursos", {}).get(
                 self.combo_filtro_curso.get()) if hasattr(self, "combo_filtro_curso") else None
             docente_elegido = getattr(self, "filtro_docentes", {}).get(

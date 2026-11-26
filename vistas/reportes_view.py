@@ -4,6 +4,7 @@ import customtkinter as ctk
 from controladores.horario_controller import HorarioController
 from controladores.reporte_general_controller import ReporteGeneralController
 from modelos.estado_horario import estado_horario
+from componentes.tareas_ui import iniciar_tarea
 from reportes.estrategias_exportacion import (
     ExportadorReporte, ExportarCSV, ExportarPDF, guardar_csv,
 )
@@ -37,8 +38,8 @@ class ReportesView(ctk.CTkFrame):
         )
         self.combo_tipo.pack(side="left", padx=20, pady=(0, 20))
 
-        btn_generar = ctk.CTkButton(self.filter_frame, text="Generar Vistas de Reporte", command=self.generar_reporte, fg_color="#7256ac")
-        btn_generar.pack(side="left", padx=10, pady=(0, 20))
+        self.btn_generar = ctk.CTkButton(self.filter_frame, text="Generar reporte", command=self.generar_reporte, fg_color="#7256ac")
+        self.btn_generar.pack(side="left", padx=10, pady=(0, 20))
 
         self.combo_formato = ctk.CTkOptionMenu(self.filter_frame, values=["CSV", "PDF"], width=90)
         self.combo_formato.pack(side="left", padx=10, pady=(0, 20))
@@ -72,7 +73,44 @@ class ReportesView(ctk.CTkFrame):
         self.txt_reporte.delete("0.0", "end")
         self.txt_reporte.insert("end", "Pulsa Generar Vistas de Reporte para actualizar los datos.")
 
-    def generar_reporte(self):
+    def _consultar_reporte(self, tipo):
+        if tipo == "Resumen Institucional":
+            return self.reporte_general_controller.generar()
+        if tipo == "Aulas y Aforo":
+            return self.horario_controller.obtener_aulas(estricto=True)
+        return (
+            self.horario_controller.obtener_materias(estricto=True),
+            self.horario_controller.obtener_aulas(estricto=True),
+            self.horario_controller.obtener_docentes(estricto=True),
+            self.horario_controller.obtener_cursos(estricto=True),
+            self.horario_controller.obtener_horarios_registrados(estricto=True),
+        )
+
+    def generar_reporte(self, _datos=None, _error=None):
+        if _datos is None and _error is None and hasattr(self, "after"):
+            if getattr(self, "_reporte_pendiente", False):
+                return
+            tipo_actual = self.combo_tipo.get()
+            self._reporte_pendiente = True
+            self.btn_generar.configure(state="disabled")
+            self.btn_exportar.configure(state="disabled")
+            self.lbl_resumen.configure(text="Cargando reporte...", text_color="#7256ac")
+
+            def terminar(datos):
+                self._reporte_pendiente = False
+                self.btn_generar.configure(state="normal")
+                if self.combo_tipo.get() == tipo_actual:
+                    self.generar_reporte(_datos=datos)
+
+            def fallar(error):
+                self._reporte_pendiente = False
+                self.btn_generar.configure(state="normal")
+                self.generar_reporte(_error=error)
+
+            iniciar_tarea(
+                self, lambda: self._consultar_reporte(tipo_actual), terminar, fallar,
+            )
+            return
         tipo = self.combo_tipo.get()
         self.txt_reporte.delete("0.0", "end")
         self.csv_columnas = []
@@ -86,12 +124,16 @@ class ReportesView(ctk.CTkFrame):
         self.txt_reporte.insert("end", encabezado)
 
         try:
+            if _error is not None:
+                raise _error
             if tipo == "Resumen Institucional":
-                self.csv_columnas, self.csv_filas = self.reporte_general_controller.generar()
+                self.csv_columnas, self.csv_filas = (
+                    _datos if _datos is not None else self.reporte_general_controller.generar()
+                )
                 for recurso, resumen in self.csv_filas:
                     self.txt_reporte.insert("end", f"{recurso}: {resumen}\n")
             elif tipo == "Aulas y Aforo":
-                data = self.horario_controller.obtener_aulas(estricto=True)
+                data = _datos if _datos is not None else self.horario_controller.obtener_aulas(estricto=True)
                 self.csv_columnas = ["ID", "Número", "Capacidad", "Tipo"]
                 self.txt_reporte.insert("end", f"{'ID':<6} | {'NÚMERO':<12} | {'CAPACIDAD':<14} | {'TIPO':<20}\n")
                 self.txt_reporte.insert("end", "-" * 60 + "\n")
@@ -99,12 +141,15 @@ class ReportesView(ctk.CTkFrame):
                     self.txt_reporte.insert("end", f"{row.get('id',''):<6} | {row.get('numero',''):<12} | {row.get('capacidad',''):<14} | {row.get('tipo',''):<20}\n")
                     self.csv_filas.append([row.get("id"), row.get("numero"), row.get("capacidad"), row.get("tipo")])
             else:
-                materias_map = {str(m.get("id")): m.get("nombre", f"ID: {m.get('id')}") for m in self.horario_controller.obtener_materias(estricto=True)}
-                aulas_map = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in self.horario_controller.obtener_aulas(estricto=True)}
-                docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes(estricto=True)}
-                cursos_map = {str(c.get("id")): c.get("nombre", f"ID: {c.get('id')}") for c in self.horario_controller.obtener_cursos(estricto=True)}
+                materias, aulas, docentes, cursos, horarios = (
+                    _datos if _datos is not None else ReportesView._consultar_reporte(self, tipo)
+                )
+                materias_map = {str(m.get("id")): m.get("nombre", f"ID: {m.get('id')}") for m in materias}
+                aulas_map = {str(a.get("id")): f"Aula {a.get('numero', a.get('id'))}" for a in aulas}
+                docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in docentes}
+                cursos_map = {str(c.get("id")): c.get("nombre", f"ID: {c.get('id')}") for c in cursos}
 
-                data = [h for h in self.horario_controller.obtener_horarios_registrados(estricto=True)
+                data = [h for h in horarios
                         if estado_horario(h.get("estado", "Publicado")).visible_en_calendario()]
                 self.csv_columnas = ["Día", "Hora", "Aula", "Docente", "Materia", "Curso"]
                 
