@@ -34,6 +34,10 @@ y aplica en su SQL Editor, en este orden:
    repetir números de aula.
 7. `supabase_edicion_recursos.sql`: permite a Administrador editar y eliminar
    aulas y horarios; mantiene las validaciones de aforo y cruces en Supabase.
+8. `supabase_estados_horario.sql`: añade Borrador, Publicado y Cancelado. Los
+   horarios existentes quedan Publicados; conserva las restricciones de roles y
+   valida aforo y cruces al publicar un borrador.
+9. `supabase_indice_sesiones.sql`: indexa la relación entre sesiones y usuarios.
 
 Las migraciones se aplican de forma transaccional con la herramienta de Supabase.
 Si alguna falla, revisa el mensaje y corrige el problema antes de iniciar la
@@ -49,6 +53,8 @@ antiguo script de autenticación que permitía consultar la tabla de usuarios.
 En **Reportes**, genera primero la vista de horarios o aulas, elige **CSV** o
 **PDF** y pulsa **Exportar reporte**. CSV se abre en Excel y mantiene la
 protección frente a fórmulas; PDF permite compartir el reporte formateado.
+El tipo **Resumen Institucional** agrega aulas, docentes, cursos y horas
+semanales de horarios publicados.
 
 ## Patrones creacionales
 
@@ -96,6 +102,16 @@ y `HorarioPreparado` mediante `aceptar()`. Calcula capacidad, estudiantes
 previstos y horas semanales sin mezclar esos cálculos con la persistencia de
 cada modelo. El controlador prepara los modelos y Reportes muestra el
 «Resumen Institucional», exportable a CSV o PDF.
+
+## Patrón de comportamiento: State
+
+En Registro de Horario puedes guardar un horario **Publicado** o **Borrador**.
+Un borrador no ocupa el aula en el calendario; al publicarlo, Supabase revisa
+cruces y aforo otra vez. Un horario publicado se puede **Cancelar** y deja de
+aparecer en el calendario y los reportes. Un cancelado no se puede editar ni
+reactivar. `modelos/estado_horario.py` define estas acciones y la base aplica
+las mismas restricciones aunque alguien intente cambiar el estado fuera de la
+interfaz.
 
 El acceso a las tablas academicas requiere una sesion iniciada y permisos por
 rol. Como el registro permite un correo institucional sin verificar su

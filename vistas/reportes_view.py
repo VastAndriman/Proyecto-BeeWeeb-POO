@@ -3,6 +3,7 @@ from tkinter import filedialog, messagebox
 import customtkinter as ctk
 from controladores.horario_controller import HorarioController
 from controladores.reporte_general_controller import ReporteGeneralController
+from modelos.estado_horario import estado_horario
 from reportes.estrategias_exportacion import (
     ExportadorReporte, ExportarCSV, ExportarPDF, guardar_csv,
 )
@@ -103,7 +104,8 @@ class ReportesView(ctk.CTkFrame):
                 docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes(estricto=True)}
                 cursos_map = {str(c.get("id")): c.get("nombre", f"ID: {c.get('id')}") for c in self.horario_controller.obtener_cursos(estricto=True)}
 
-                data = self.horario_controller.obtener_horarios_registrados(estricto=True)
+                data = [h for h in self.horario_controller.obtener_horarios_registrados(estricto=True)
+                        if estado_horario(h.get("estado", "Publicado")).visible_en_calendario()]
                 self.csv_columnas = ["Día", "Hora", "Aula", "Docente", "Materia", "Curso"]
                 
                 self.txt_reporte.insert("end", f"{'DÍA':<10} | {'HORA':<13} | {'AULA':<12} | {'DOCENTE':<22} | {'MATERIA':<28} | {'CURSO':<15}\n")

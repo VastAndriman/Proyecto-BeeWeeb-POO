@@ -63,6 +63,22 @@ class ValidacionHorariosTests(unittest.TestCase):
         self.assertIn("docente", mensaje)
         self.horarios.insert.assert_not_called()
 
+    def test_borrador_no_reserva_bloque_y_publicado_ignora_cancelados(self):
+        self.horarios.select.return_value.eq.return_value.execute.return_value = SimpleNamespace(
+            data=[{
+                "hora_inicio": "09:30:00", "hora_fin": "10:30:00",
+                "docente_id": 1, "aula_id": 2, "curso_id": 1,
+                "estado": "Cancelado",
+            }]
+        )
+        ok, _ = self.controller.validar_y_crear_horario(**self.datos, estado="Borrador")
+        self.assertTrue(ok)
+        self.assertEqual(self.horarios.insert.call_args.args[0]["estado"], "Borrador")
+        self.horarios.select.assert_not_called()
+
+        ok, _ = self.controller.validar_y_crear_horario(**self.datos, estado="Publicado")
+        self.assertTrue(ok)
+
     def test_observadores_reciben_solo_cambios_guardados(self):
         observador = Mock()
         self.controller.suscribir(observador)

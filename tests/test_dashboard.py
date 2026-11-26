@@ -11,7 +11,9 @@ class DashboardTests(unittest.TestCase):
         db = Mock()
         db.table.side_effect = [
             Mock(select=Mock(return_value=Mock(execute=Mock(return_value=SimpleNamespace(count=2, data=[]))))),
-            Mock(select=Mock(return_value=Mock(execute=Mock(return_value=SimpleNamespace(count=3, data=[]))))),
+            Mock(select=Mock(return_value=Mock(execute=Mock(return_value=SimpleNamespace(
+                count=3, data=[{"estado": "Publicado"}] * 3,
+            ))))),
         ]
         app = SimpleNamespace(dashboard_controller=DashboardController(db), card_aulas_val=Mock(),
                               card_horarios_val=Mock(), lbl_estado_conexion=Mock(),

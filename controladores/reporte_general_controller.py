@@ -4,6 +4,7 @@ from controladores.horario_controller import HorarioController
 from modelos.aula import Aula
 from modelos.curso import Curso
 from modelos.docente import Docente
+from modelos.estado_horario import estado_horario
 from patrones_creacionales_beeweek import HorarioPreparado
 from reportes.visitante_resumen import VisitanteResumenInstitucional
 
@@ -24,6 +25,8 @@ class ReporteGeneralController:
         for fila in self.horarios.obtener_cursos(estricto=True):
             Curso(fila["paralelo"], fila["num_estudiantes"], db_client=self.horarios.db).aceptar(visitante)
         for fila in self.horarios.obtener_horarios_registrados(estricto=True):
+            if not estado_horario(fila.get("estado", "Publicado")).visible_en_calendario():
+                continue
             HorarioPreparado(
                 dia=fila["dia"], hora_inicio=str(fila["hora_inicio"]),
                 hora_fin=str(fila["hora_fin"]), materia_id=fila["materia_id"],

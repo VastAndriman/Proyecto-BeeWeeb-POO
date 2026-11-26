@@ -3,6 +3,7 @@ import logging
 
 from conexion.supabase_client import SupabaseConnection
 from patrones_creacionales_beeweek import HorarioBuilder
+from modelos.estado_horario import estado_horario
 
 class HorarioController:
     _instancia_defecto = None
@@ -106,6 +107,10 @@ class HorarioController:
                 raise
             return []
 
+    def obtener_horarios_publicados(self, *, estricto=False):
+        return [h for h in self.obtener_horarios_registrados(estricto=estricto)
+                if estado_horario(h.get("estado", "Publicado")).visible_en_calendario()]
+
     def validar_y_crear_horario(self_or_dia=None, dia=None, hora_inicio=None, hora_fin=None, materia_id=None, docente_id=None, aula_id=None, curso_id=None, num_estudiantes=None, *args, **kwargs):
         if isinstance(self_or_dia, HorarioController):
             inst = self_or_dia
@@ -122,6 +127,9 @@ class HorarioController:
         aula_id = aula_id if aula_id is not None else kwargs.get("aula_id")
         curso_id = curso_id if curso_id is not None else kwargs.get("curso_id")
         num_estudiantes = num_estudiantes if num_estudiantes is not None else kwargs.get("num_estudiantes")
+        estado = kwargs.get("estado", "Publicado")
+        if estado not in ("Publicado", "Borrador"):
+            return False, "Selecciona un estado válido para el horario."
 
         try:
             horario = (HorarioBuilder().dia(dia).horas(hora_inicio, hora_fin)
@@ -160,8 +168,10 @@ class HorarioController:
             return False, f"Error: Aforo insuficiente. El aula tiene capacidad para {capacidad_aula} estudiantes, pero se ingresaron {cantidad_estudiantes}."
 
         # 2. Consultar horarios existentes para validar cruces concurrentes
-        horarios_existentes = client.table("horarios").select("*").eq("dia", dia).execute()
-        for h in (horarios_existentes.data or []):
+        horarios_existentes = client.table("horarios").select("*").eq("dia", dia).execute() if estado == "Publicado" else None
+        for h in (horarios_existentes.data or [] if horarios_existentes else []):
+            if not estado_horario(h.get("estado", "Publicado")).visible_en_calendario():
+                continue
             try:
                 inicio_existente = HorarioController.convertir_hora(h.get("hora_inicio"))
                 fin_existente = HorarioController.convertir_hora(h.get("hora_fin"))
@@ -183,10 +193,27 @@ class HorarioController:
 
         # 3. Si pasa todas las validaciones, se registra el horario en Supabase
         nuevo_horario = horario.para_guardar()
+        nuevo_horario["estado"] = estado
         
         client.table("horarios").insert(nuevo_horario).execute()
         inst._notificar("creado")
-        return True, "¡Horario registrado exitosamente sin cruces!"
+        return True, ("Horario guardado como borrador." if estado == "Borrador"
+                      else "¡Horario registrado exitosamente sin cruces!")
+
+    def cambiar_estado(self, horario_id, destino):
+        if not isinstance(horario_id, int) or horario_id <= 0:
+            return False, "Selecciona un horario válido."
+        filas = self.db.table("horarios").select("*").eq("id", horario_id).execute().data or []
+        if not filas:
+            return False, "El horario ya no existe."
+        estado_actual = estado_horario(filas[0].get("estado", "Publicado"))
+        try:
+            nuevo = estado_actual.cambiar_a(destino)
+        except ValueError as error:
+            return False, str(error)
+        self.db.table("horarios").update({"estado": nuevo.nombre}).eq("id", horario_id).execute()
+        self._notificar("estado")
+        return True, f"Horario {nuevo.nombre.lower()}."
 
     def actualizar_horario(self, horario_id, *, dia, hora_inicio, hora_fin,
                            materia_id, docente_id, aula_id, curso_id):

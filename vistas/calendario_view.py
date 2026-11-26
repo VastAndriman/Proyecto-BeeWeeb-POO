@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from datetime import time
 from controladores.horario_controller import HorarioController
+from modelos.estado_horario import estado_horario
 
 class CalendarioView(ctk.CTkFrame):
     def __init__(self, master, horario_controller=None):
@@ -145,7 +146,8 @@ class CalendarioView(ctk.CTkFrame):
                 aulas_map = {str(a.get("id")): str(a.get("numero", a.get("id"))) for a in self.horario_controller.obtener_aulas(estricto=True)}
                 docentes_map = {str(d.get("id")): f"{d.get('nombre', '')} {d.get('apellido', '')}".strip() for d in self.horario_controller.obtener_docentes(estricto=True)}
                 cursos_map = {str(c.get("id")): c.get("nombre", "") for c in self.horario_controller.obtener_cursos(estricto=True)}
-                horarios = self.horario_controller.obtener_horarios_registrados(estricto=True)
+                horarios = [h for h in self.horario_controller.obtener_horarios_registrados(estricto=True)
+                            if estado_horario(h.get("estado", "Publicado")).visible_en_calendario()]
                 self._cache_calendario = (materias_map, aulas_map, docentes_map, cursos_map, horarios)
                 if hasattr(self, "combo_filtro_curso"):
                     self.filtro_cursos = {

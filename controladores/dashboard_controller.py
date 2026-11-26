@@ -1,6 +1,7 @@
 """Datos y resumen semanal del panel de inicio."""
 
 from conexion.supabase_client import SupabaseConnection
+from modelos.estado_horario import estado_horario
 
 
 def resumir_horarios(horarios, materias, limite=5):
@@ -32,9 +33,10 @@ class DashboardController:
     def obtener_metricas(self):
         aulas = self.db.table("aulas").select("*", count="exact").execute()
         horarios = self.db.table("horarios").select("*", count="exact").execute()
-        filas_horarios = horarios.data or []
+        filas_horarios = [h for h in (horarios.data or [])
+                          if estado_horario(h.get("estado", "Publicado")).visible_en_calendario()]
         total_aulas = aulas.count if aulas.count is not None else len(aulas.data or [])
-        total_horarios = horarios.count if horarios.count is not None else len(filas_horarios)
+        total_horarios = len(filas_horarios)
         return total_aulas, total_horarios, filas_horarios
 
     def obtener_resumen(self, horarios):
