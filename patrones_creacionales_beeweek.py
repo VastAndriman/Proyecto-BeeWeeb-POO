@@ -64,6 +64,9 @@ class HorarioPreparado:
     aula_id: int
     curso_id: int
 
+    def aceptar(self, visitante):
+        visitante.visitar_horario(self)
+
     def para_guardar(self) -> dict:
         return {
             "dia": self.dia,

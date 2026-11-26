@@ -89,6 +89,14 @@ operación rechazada no genera aviso. Los observadores se registran con
 columnas y filas con el formato elegido. La implementación está en
 `reportes/estrategias_exportacion.py`; la selección se hace en Reportes.
 
+## Patrón de comportamiento: Visitor
+
+`VisitanteResumenInstitucional` recorre los modelos `Aula`, `Docente`, `Curso`
+y `HorarioPreparado` mediante `aceptar()`. Calcula capacidad, estudiantes
+previstos y horas semanales sin mezclar esos cálculos con la persistencia de
+cada modelo. El controlador prepara los modelos y Reportes muestra el
+«Resumen Institucional», exportable a CSV o PDF.
+
 El acceso a las tablas academicas requiere una sesion iniciada y permisos por
 rol. Como el registro permite un correo institucional sin verificar su
 existencia, usa datos ficticios para la demostracion. La aplicacion tampoco

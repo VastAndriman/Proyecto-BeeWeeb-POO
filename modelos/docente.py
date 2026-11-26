@@ -10,6 +10,9 @@ class Docente(Persona):
     def obtener_tipo(self) -> str:
         return "Docente"
 
+    def aceptar(self, visitante):
+        visitante.visitar_docente(self)
+
     def guardar(self):
         client = self.db if self.db is not None else SupabaseConnection.get_client()
         data = {

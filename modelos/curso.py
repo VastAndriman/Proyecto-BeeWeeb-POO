@@ -19,3 +19,6 @@ class Curso:
             "paralelo": self.paralelo,
             "num_estudiantes": self.num_estudiantes,
         }).execute()
+
+    def aceptar(self, visitante):
+        visitante.visitar_curso(self)

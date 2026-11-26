@@ -10,6 +10,13 @@ class Aula:
     def validar_aforo(self, cantidad_estudiantes: int) -> bool:
         return self.__capacidad >= cantidad_estudiantes
 
+    @property
+    def capacidad(self):
+        return self.__capacidad
+
+    def aceptar(self, visitante):
+        visitante.visitar_aula(self)
+
     def guardar(self):
         client = self.db if self.db is not None else SupabaseConnection.get_client()
         data = {

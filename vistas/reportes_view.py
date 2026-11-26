@@ -2,6 +2,7 @@ from tkinter import filedialog, messagebox
 
 import customtkinter as ctk
 from controladores.horario_controller import HorarioController
+from controladores.reporte_general_controller import ReporteGeneralController
 from reportes.estrategias_exportacion import (
     ExportadorReporte, ExportarCSV, ExportarPDF, guardar_csv,
 )
@@ -11,6 +12,7 @@ class ReportesView(ctk.CTkFrame):
     def __init__(self, master, horario_controller=None):
         super().__init__(master, fg_color="transparent")
         self.horario_controller = horario_controller if horario_controller is not None else HorarioController()
+        self.reporte_general_controller = ReporteGeneralController(self.horario_controller)
         self.csv_columnas = []
         self.csv_filas = []
         
@@ -29,7 +31,7 @@ class ReportesView(ctk.CTkFrame):
         
         # Selectores
         self.combo_tipo = ctk.CTkOptionMenu(
-            self.filter_frame, values=["Horarios Registrados", "Aulas y Aforo"],
+            self.filter_frame, values=["Horarios Registrados", "Aulas y Aforo", "Resumen Institucional"],
             command=lambda _: self._invalidar_reporte(),
         )
         self.combo_tipo.pack(side="left", padx=20, pady=(0, 20))
@@ -83,7 +85,11 @@ class ReportesView(ctk.CTkFrame):
         self.txt_reporte.insert("end", encabezado)
 
         try:
-            if tipo == "Aulas y Aforo":
+            if tipo == "Resumen Institucional":
+                self.csv_columnas, self.csv_filas = self.reporte_general_controller.generar()
+                for recurso, resumen in self.csv_filas:
+                    self.txt_reporte.insert("end", f"{recurso}: {resumen}\n")
+            elif tipo == "Aulas y Aforo":
                 data = self.horario_controller.obtener_aulas(estricto=True)
                 self.csv_columnas = ["ID", "Número", "Capacidad", "Tipo"]
                 self.txt_reporte.insert("end", f"{'ID':<6} | {'NÚMERO':<12} | {'CAPACIDAD':<14} | {'TIPO':<20}\n")
