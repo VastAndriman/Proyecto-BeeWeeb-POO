@@ -46,8 +46,9 @@ antiguo script de autenticación que permitía consultar la tabla de usuarios.
   y la relación estudiante-curso sin modificar la base.
 - `python test_conexion.py` comprueba la conexión con una consulta de solo lectura.
 
-En **Reportes**, genera primero la vista de horarios o aulas y luego pulsa
-**Exportar CSV** para guardar los datos en un archivo que se puede abrir en Excel.
+En **Reportes**, genera primero la vista de horarios o aulas, elige **CSV** o
+**PDF** y pulsa **Exportar reporte**. CSV se abre en Excel y mantiene la
+protección frente a fórmulas; PDF permite compartir el reporte formateado.
 
 ## Patrones creacionales
 
@@ -81,6 +82,12 @@ acciones: actualizar Inicio, sincronizar el Calendario si ya está abierto e
 invalidar el reporte anterior para no exportar datos desactualizados. Una
 operación rechazada no genera aviso. Los observadores se registran con
 `suscribir()` y pueden retirarse con `desuscribir()`.
+
+## Patrón de comportamiento: Strategy
+
+`ExportadorReporte` recibe `ExportarCSV` o `ExportarPDF` y guarda las mismas
+columnas y filas con el formato elegido. La implementación está en
+`reportes/estrategias_exportacion.py`; la selección se hace en Reportes.
 
 El acceso a las tablas academicas requiere una sesion iniciada y permisos por
 rol. Como el registro permite un correo institucional sin verificar su

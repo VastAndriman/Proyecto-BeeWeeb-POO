@@ -1,20 +1,10 @@
-import csv
 from tkinter import filedialog, messagebox
 
 import customtkinter as ctk
 from controladores.horario_controller import HorarioController
-
-
-def guardar_csv(ruta, columnas, filas):
-    """Guarda un reporte legible en Excel sin interpretar celdas como fórmulas."""
-    def celda(valor):
-        texto = "" if valor is None else str(valor)
-        return "'" + texto if texto.lstrip().startswith(("=", "+", "-", "@")) else texto
-
-    with open(ruta, "w", encoding="utf-8-sig", newline="") as archivo:
-        escritor = csv.writer(archivo, delimiter=";")
-        escritor.writerow(columnas)
-        escritor.writerows([celda(valor) for valor in fila] for fila in filas)
+from reportes.estrategias_exportacion import (
+    ExportadorReporte, ExportarCSV, ExportarPDF, guardar_csv,
+)
 
 
 class ReportesView(ctk.CTkFrame):
@@ -47,8 +37,10 @@ class ReportesView(ctk.CTkFrame):
         btn_generar = ctk.CTkButton(self.filter_frame, text="Generar Vistas de Reporte", command=self.generar_reporte, fg_color="#7256ac")
         btn_generar.pack(side="left", padx=10, pady=(0, 20))
 
+        self.combo_formato = ctk.CTkOptionMenu(self.filter_frame, values=["CSV", "PDF"], width=90)
+        self.combo_formato.pack(side="left", padx=10, pady=(0, 20))
         self.btn_exportar = ctk.CTkButton(
-            self.filter_frame, text="Exportar CSV", command=self.exportar_csv,
+            self.filter_frame, text="Exportar reporte", command=self.exportar_reporte,
             fg_color="#7256ac", state="disabled"
         )
         self.btn_exportar.pack(side="left", padx=10, pady=(0, 20))
@@ -145,18 +137,27 @@ class ReportesView(ctk.CTkFrame):
             self.txt_reporte.insert("end", f"No se pudo generar el reporte: {e}")
             self.lbl_resumen.configure(text="No se pudo generar el reporte.", text_color="#b42333")
 
-    def exportar_csv(self):
+    def exportar_reporte(self):
         if not self.csv_columnas:
             return
+        formato = self.combo_formato.get()
+        extension = ".pdf" if formato == "PDF" else ".csv"
         ruta = filedialog.asksaveasfilename(
-            title="Guardar reporte", defaultextension=".csv",
-            filetypes=[("Archivo CSV", "*.csv")],
+            title="Guardar reporte", defaultextension=extension,
+            filetypes=[("Archivo PDF", "*.pdf")] if formato == "PDF"
+                      else [("Archivo CSV", "*.csv")],
         )
         if not ruta:
             return
         try:
-            guardar_csv(ruta, self.csv_columnas, self.csv_filas)
-        except OSError as error:
+            estrategia = ExportarPDF() if formato == "PDF" else ExportarCSV()
+            ExportadorReporte(estrategia).guardar(ruta, self.csv_columnas, self.csv_filas)
+        except Exception as error:
             messagebox.showerror("No se pudo exportar", str(error))
         else:
-            messagebox.showinfo("Reporte exportado", "El archivo CSV se guardó correctamente.")
+            messagebox.showinfo("Reporte exportado", f"El archivo {formato} se guardó correctamente.")
+
+    def exportar_csv(self):
+        """Conserva la acción anterior para integraciones que ya la llamen."""
+        self.combo_formato.set("CSV")
+        self.exportar_reporte()

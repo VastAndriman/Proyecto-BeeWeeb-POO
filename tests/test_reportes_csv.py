@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+from reportes.estrategias_exportacion import ExportadorReporte, ExportarPDF
 from vistas.reportes_view import ReportesView, guardar_csv
 
 
@@ -82,6 +83,17 @@ class ReporteCsvTests(unittest.TestCase):
                 filas = list(csv.reader(archivo, delimiter=";"))
 
         self.assertEqual(filas, [["Número", "Nombre"], ["101", "Álgebra"], ["102", "'=1+1"]])
+
+    def test_strategy_guarda_pdf_del_mismo_reporte(self):
+        with tempfile.TemporaryDirectory() as carpeta:
+            ruta = Path(carpeta) / "horarios.pdf"
+            ExportadorReporte(ExportarPDF()).guardar(
+                ruta, ["Día", "Materia"], [["Miércoles", "Programación Orientada a Objetos"]]
+            )
+            contenido = ruta.read_bytes()
+
+        self.assertTrue(contenido.startswith(b"%PDF-"))
+        self.assertGreater(len(contenido), 500)
 
 
 if __name__ == "__main__":
