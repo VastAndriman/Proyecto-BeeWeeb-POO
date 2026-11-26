@@ -62,6 +62,18 @@ La implementación está en `patrones_creacionales_beeweek.py`. Se puede ejecuta
 ni cambios en la base. Las pruebas de integración local están en
 `tests/test_patrones_creacionales.py`.
 
+## Arquitectura MVC
+
+El registro de horarios, la gestión de aulas y la creación de materias y cursos
+siguen el flujo **Vista → Controlador → Modelo/datos**. Por ejemplo,
+`AulasView` recoge el formulario y muestra la respuesta; `AulasController`
+valida los valores y coordina las operaciones; `Aula` representa el recurso y
+se usa al guardarlo. `main.py` crea el controlador y se lo entrega a la vista.
+
+La separación aún no cubre todas las pantallas: Docentes, Estudiantes y el
+resumen de Inicio conservan consultas desde la interfaz. Conviene mover esas
+consultas por etapas y comprobar cada pantalla antes de la entrega.
+
 ## Patrón de comportamiento: Observer
 
 `HorarioController` avisa a sus observadores cuando Supabase confirma la

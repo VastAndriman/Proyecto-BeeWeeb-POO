@@ -17,6 +17,7 @@ from vistas.academico_view import AcademicoView
 from controladores.auth_controller import AuthController
 from controladores.horario_controller import HorarioController
 from controladores.academico_controller import AcademicoController
+from controladores.aulas_controller import AulasController
 from conexion.supabase_client import SupabaseConnection
 
 ctk.set_appearance_mode("Light")
@@ -60,6 +61,7 @@ class BeeWeekApp(ctk.CTk):
         self.auth_controller = AuthController(self.db_client)
         self.horario_controller = HorarioController(self.db_client)
         self.academico_controller = AcademicoController(self.db_client)
+        self.aulas_controller = AulasController(self.db_client)
         self.horario_controller.suscribir(self._actualizar_inicio_tras_horario)
         self.horario_controller.suscribir(self._actualizar_calendario_tras_horario)
         self.horario_controller.suscribir(self._invalidar_reporte_tras_horario)
@@ -231,7 +233,7 @@ class BeeWeekApp(ctk.CTk):
         constructores = {
             "calendario": lambda: CalendarioView(self.content_area, horario_controller=self.horario_controller),
             "horarios": lambda: HorarioView(self.content_area, horario_controller=self.horario_controller),
-            "aulas": lambda: AulasView(self.content_area, db_client=self.db_client),
+            "aulas": lambda: AulasView(self.content_area, aulas_controller=self.aulas_controller),
             "docentes": lambda: DocenteView(self.content_area, db_client=self.db_client),
             "estudiantes": lambda: EstudianteView(self.content_area, db_client=self.db_client),
             "academico": lambda: AcademicoView(self.content_area, academico_controller=self.academico_controller),

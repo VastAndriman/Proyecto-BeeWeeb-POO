@@ -2,14 +2,14 @@ from tkinter import messagebox
 
 import customtkinter as ctk
 
-from conexion.supabase_client import SupabaseConnection
 from componentes.tabla_busqueda import TablaBusqueda
+from controladores.aulas_controller import AulasController
 
 
 class AulasView(ctk.CTkFrame):
-    def __init__(self, master, db_client=None):
+    def __init__(self, master, aulas_controller=None):
         super().__init__(master, fg_color="transparent")
-        self.db = db_client if db_client is not None else SupabaseConnection.get_client()
+        self.controller = aulas_controller if aulas_controller is not None else AulasController()
         self.aulas_por_opcion = {}
 
         ctk.CTkLabel(self, text="Gestión de Aulas", font=("Arial", 22, "bold"),
@@ -72,15 +72,7 @@ class AulasView(ctk.CTkFrame):
             entrada.insert(0, str(valor))
 
     def _datos_formulario(self):
-        numero = self.entry_numero.get().strip()
-        tipo = self.entry_tipo.get().strip()
-        try:
-            capacidad = int(self.entry_capacidad.get().strip())
-        except ValueError:
-            raise ValueError("La capacidad debe ser un número entero.") from None
-        if not numero or not tipo or capacidad <= 0:
-            raise ValueError("Completa número y tipo; la capacidad debe ser mayor que cero.")
-        return {"numero": numero, "capacidad": capacidad, "tipo": tipo}
+        return (self.entry_numero.get(), self.entry_capacidad.get(), self.entry_tipo.get())
 
     def _id_seleccionado(self):
         aula = self.aulas_por_opcion.get(self.selector.get())
@@ -102,7 +94,7 @@ class AulasView(ctk.CTkFrame):
         self.selector.configure(values=["Selecciona un aula"])
         self.selector.set("Selecciona un aula")
         try:
-            aulas = self.db.table("aulas").select("*").execute().data or []
+            aulas = self.controller.listar()
             self.aulas_por_opcion = {
                 f"ID {aula['id']} · Aula {aula['numero']}": aula for aula in aulas
             }
@@ -117,7 +109,7 @@ class AulasView(ctk.CTkFrame):
 
     def crear_aula(self):
         try:
-            self.db.table("aulas").insert(self._datos_formulario()).execute()
+            self.controller.crear(*self._datos_formulario())
             if self.cargar_aulas():
                 self.mensaje.configure(text="Aula añadida.", text_color="#15803d")
             else:
@@ -131,7 +123,7 @@ class AulasView(ctk.CTkFrame):
     def actualizar_aula(self):
         try:
             aula_id = self._id_seleccionado()
-            self.db.table("aulas").update(self._datos_formulario()).eq("id", aula_id).execute()
+            self.controller.actualizar(aula_id, *self._datos_formulario())
             if self.cargar_aulas():
                 self.mensaje.configure(text="Aula actualizada.", text_color="#15803d")
             else:
@@ -147,7 +139,7 @@ class AulasView(ctk.CTkFrame):
             aula_id = self._id_seleccionado()
             if not messagebox.askyesno("Eliminar aula", "¿Eliminar el aula seleccionada?", parent=self):
                 return
-            self.db.table("aulas").delete().eq("id", aula_id).execute()
+            self.controller.eliminar(aula_id)
             if self.cargar_aulas():
                 self.mensaje.configure(text="Aula eliminada.", text_color="#15803d")
             else:
