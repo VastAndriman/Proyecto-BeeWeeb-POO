@@ -64,15 +64,14 @@ ni cambios en la base. Las pruebas de integración local están en
 
 ## Arquitectura MVC
 
-El registro de horarios, la gestión de aulas y la creación de materias y cursos
-siguen el flujo **Vista → Controlador → Modelo/datos**. Por ejemplo,
+Las pantallas siguen el flujo **Vista → Controlador → Modelo/datos**. Por ejemplo,
 `AulasView` recoge el formulario y muestra la respuesta; `AulasController`
 valida los valores y coordina las operaciones; `Aula` representa el recurso y
 se usa al guardarlo. `main.py` crea el controlador y se lo entrega a la vista.
 
-La separación aún no cubre todas las pantallas: Docentes, Estudiantes y el
-resumen de Inicio conservan consultas desde la interfaz. Conviene mover esas
-consultas por etapas y comprobar cada pantalla antes de la entrega.
+Docentes, Estudiantes, el resumen de Inicio y Reportes también obtienen sus
+datos mediante controladores. Estudiantes reutiliza la lista de cursos ya
+cargada para mostrar el paralelo sin consultar dos veces al abrir la pantalla.
 
 ## Patrón de comportamiento: Observer
 

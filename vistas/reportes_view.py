@@ -92,8 +92,7 @@ class ReportesView(ctk.CTkFrame):
 
         try:
             if tipo == "Aulas y Aforo":
-                res = self.horario_controller.db.table("aulas").select("*").execute()
-                data = res.data if res.data else []
+                data = self.horario_controller.obtener_aulas(estricto=True)
                 self.csv_columnas = ["ID", "Número", "Capacidad", "Tipo"]
                 self.txt_reporte.insert("end", f"{'ID':<6} | {'NÚMERO':<12} | {'CAPACIDAD':<14} | {'TIPO':<20}\n")
                 self.txt_reporte.insert("end", "-" * 60 + "\n")

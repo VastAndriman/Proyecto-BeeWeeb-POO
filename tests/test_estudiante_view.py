@@ -17,26 +17,27 @@ class EstudianteViewTests(unittest.TestCase):
         }
         vista = SimpleNamespace(
             **campos, combo_curso=Mock(), cursos_map={}, lbl_mensaje=Mock(),
-            creador_estudiante=Mock(), db=Mock(), cargar_estudiantes=Mock(return_value=False),
+            controller=Mock(), cargar_estudiantes=Mock(return_value=False),
         )
 
         EstudianteView.guardar_estudiante(vista)
 
-        vista.creador_estudiante.registrar.assert_called_once()
+        vista.controller.registrar.assert_called_once()
         self.assertIn("guardado", vista.lbl_mensaje.configure.call_args.kwargs["text"])
         self.assertIn("no se pudo actualizar", vista.lbl_mensaje.configure.call_args.kwargs["text"])
 
     def test_avisa_si_no_se_pueden_cargar_los_cursos(self):
-        db = Mock()
-        db.table.return_value.select.return_value.execute.side_effect = RuntimeError("sin conexión")
+        controller = Mock()
+        controller.listar_cursos.side_effect = RuntimeError("sin conexión")
         vista = SimpleNamespace(
-            db=db, cursos_map={"Curso anterior": 1},
+            controller=controller, cursos_map={"Curso anterior": 1}, nombres_curso={"1": "Anterior"},
             combo_curso=Mock(), lbl_mensaje=Mock(),
         )
 
         EstudianteView.cargar_cursos(vista)
 
         self.assertEqual(vista.cursos_map, {})
+        self.assertEqual(vista.nombres_curso, {})
         vista.combo_curso.set.assert_called_with("Sin curso")
         self.assertIn("No se pudieron cargar", vista.lbl_mensaje.configure.call_args.kwargs["text"])
 
@@ -52,12 +53,12 @@ class EstudianteViewTests(unittest.TestCase):
         vista = SimpleNamespace(
             **{nombre: Mock(**{"get.return_value": valor}) for nombre, valor in campos.items()},
             combo_curso=Mock(), cursos_map={}, lbl_mensaje=Mock(),
-            creador_estudiante=Mock(), db=Mock(),
+            controller=Mock(),
         )
 
         EstudianteView.guardar_estudiante(vista)
 
-        vista.creador_estudiante.registrar.assert_not_called()
+        vista.controller.registrar.assert_not_called()
         vista.lbl_mensaje.configure.assert_called_once_with(
             text="Por favor completa todos los campos.", text_color="orange"
         )

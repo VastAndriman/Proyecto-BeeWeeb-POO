@@ -1,13 +1,11 @@
 import customtkinter as ctk
-from conexion.supabase_client import SupabaseConnection
 from componentes.tabla_busqueda import TablaBusqueda
-from patrones_creacionales_beeweek import CreadorEstudiante
+from controladores.personas_controller import EstudiantesController
 
 class EstudianteView(ctk.CTkFrame):
-    def __init__(self, master, db_client=None):
+    def __init__(self, master, estudiantes_controller=None):
         super().__init__(master, fg_color="transparent")
-        self.db = db_client if db_client is not None else SupabaseConnection.get_client()
-        self.creador_estudiante = CreadorEstudiante()
+        self.controller = estudiantes_controller if estudiantes_controller is not None else EstudiantesController()
 
         ctk.CTkLabel(
             self, text="Gestión de Estudiantes", font=("Arial", 22, "bold")
@@ -38,6 +36,7 @@ class EstudianteView(ctk.CTkFrame):
             setattr(self, atributo, entrada)
 
         self.cursos_map = {}
+        self.nombres_curso = {}
         self.combo_curso = ctk.CTkOptionMenu(formulario, values=["Sin curso"])
         self.combo_curso.pack(fill="x", padx=18, pady=5)
 
@@ -64,15 +63,19 @@ class EstudianteView(ctk.CTkFrame):
 
     def cargar_cursos(self):
         try:
-            cursos = self.db.table("cursos").select("id,paralelo").execute().data or []
+            cursos = self.controller.listar_cursos()
             self.cursos_map = {
                 f"{curso['paralelo']} (ID {curso['id']})": curso["id"]
                 for curso in cursos
+            }
+            self.nombres_curso = {
+                str(curso["id"]): curso["paralelo"] for curso in cursos
             }
             self.combo_curso.configure(values=["Sin curso", *self.cursos_map])
             self.combo_curso.set("Sin curso")
         except Exception:
             self.cursos_map = {}
+            self.nombres_curso = {}
             self.combo_curso.configure(values=["Sin curso"])
             self.combo_curso.set("Sin curso")
             self.lbl_mensaje.configure(
@@ -98,7 +101,7 @@ class EstudianteView(ctk.CTkFrame):
             return
             
         try:
-            self.creador_estudiante.registrar(
+            self.controller.registrar(
                 identificacion=identificacion,
                 nombre=nombre,
                 apellido=apellido,
@@ -106,7 +109,6 @@ class EstudianteView(ctk.CTkFrame):
                 matricula=matricula,
                 carrera=carrera,
                 curso_id=curso_id,
-                db_client=self.db,
             )
             # Limpiar campos
             self.entry_identificacion.delete(0, 'end')
@@ -129,18 +131,15 @@ class EstudianteView(ctk.CTkFrame):
     def cargar_estudiantes(self):
         self.tabla.set_rows([])
         try:
-            respuesta = self.db.table("estudiantes").select("*").execute()
-            estudiantes = respuesta.data or []
+            estudiantes = self.controller.listar()
             if not estudiantes:
                 return True
-            cursos = self.db.table("cursos").select("id,paralelo").execute().data or []
-            nombres_curso = {str(curso["id"]): curso["paralelo"] for curso in cursos}
             self.tabla.set_rows([
                 {
                     "matricula": estudiante.get("matricula", ""),
                     "nombre_completo": f"{estudiante.get('nombre', '')} {estudiante.get('apellido', '')}".strip(),
                     "carrera": estudiante.get("carrera", ""),
-                    "curso": nombres_curso.get(str(estudiante.get("curso_id")), "Sin curso"),
+                    "curso": self.nombres_curso.get(str(estudiante.get("curso_id")), "Sin curso"),
                 }
                 for estudiante in estudiantes
             ])

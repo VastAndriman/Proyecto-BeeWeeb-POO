@@ -18,33 +18,12 @@ from controladores.auth_controller import AuthController
 from controladores.horario_controller import HorarioController
 from controladores.academico_controller import AcademicoController
 from controladores.aulas_controller import AulasController
+from controladores.personas_controller import DocentesController, EstudiantesController
+from controladores.dashboard_controller import DashboardController, resumir_horarios
 from conexion.supabase_client import SupabaseConnection
 
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme(os.path.join(os.path.dirname(__file__), "assets", "lavanda_theme.json"))
-
-
-def resumir_horarios(horarios, materias, limite=5):
-    """Prepara las primeras clases de la semana para la tarjeta de Inicio."""
-    dias = {dia: indice for indice, dia in enumerate(
-        ("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado")
-    )}
-    nombres = {str(materia.get("id")): materia.get("nombre", "") for materia in materias}
-    ordenados = sorted(
-        horarios,
-        key=lambda horario: (
-            dias.get(horario.get("dia"), len(dias)),
-            str(horario.get("hora_inicio", "")),
-        ),
-    )
-    return [
-        (
-            horario.get("dia", ""),
-            f"{str(horario.get('hora_inicio', ''))[:5]}–{str(horario.get('hora_fin', ''))[:5]}",
-            nombres.get(str(horario.get("materia_id")), "Materia sin nombre"),
-        )
-        for horario in ordenados[:limite]
-    ]
 
 
 class BeeWeekApp(ctk.CTk):
@@ -62,6 +41,9 @@ class BeeWeekApp(ctk.CTk):
         self.horario_controller = HorarioController(self.db_client)
         self.academico_controller = AcademicoController(self.db_client)
         self.aulas_controller = AulasController(self.db_client)
+        self.docentes_controller = DocentesController(self.db_client)
+        self.estudiantes_controller = EstudiantesController(self.db_client)
+        self.dashboard_controller = DashboardController(self.db_client)
         self.horario_controller.suscribir(self._actualizar_inicio_tras_horario)
         self.horario_controller.suscribir(self._actualizar_calendario_tras_horario)
         self.horario_controller.suscribir(self._invalidar_reporte_tras_horario)
@@ -234,8 +216,8 @@ class BeeWeekApp(ctk.CTk):
             "calendario": lambda: CalendarioView(self.content_area, horario_controller=self.horario_controller),
             "horarios": lambda: HorarioView(self.content_area, horario_controller=self.horario_controller),
             "aulas": lambda: AulasView(self.content_area, aulas_controller=self.aulas_controller),
-            "docentes": lambda: DocenteView(self.content_area, db_client=self.db_client),
-            "estudiantes": lambda: EstudianteView(self.content_area, db_client=self.db_client),
+            "docentes": lambda: DocenteView(self.content_area, docentes_controller=self.docentes_controller),
+            "estudiantes": lambda: EstudianteView(self.content_area, estudiantes_controller=self.estudiantes_controller),
             "academico": lambda: AcademicoView(self.content_area, academico_controller=self.academico_controller),
             "reportes": lambda: ReportesView(self.content_area, horario_controller=self.horario_controller),
         }
@@ -327,13 +309,8 @@ class BeeWeekApp(ctk.CTk):
 
     def actualizar_metricas(self):
         try:
-            res_aulas = self.db_client.table("aulas").select("*", count="exact").execute()
-            total_aulas = res_aulas.count if res_aulas.count is not None else len(res_aulas.data)
+            total_aulas, total_horarios, horarios = self.dashboard_controller.obtener_metricas()
             self.card_aulas_val.configure(text=str(total_aulas))
-            
-            res_horarios = self.db_client.table("horarios").select("*", count="exact").execute()
-            horarios = res_horarios.data or []
-            total_horarios = res_horarios.count if res_horarios.count is not None else len(horarios)
             self.card_horarios_val.configure(text=str(total_horarios))
             self.lbl_estado_conexion.configure(text="Datos actualizados desde Supabase.", text_color="#15803d")
         except Exception:
@@ -349,8 +326,7 @@ class BeeWeekApp(ctk.CTk):
             self._mostrar_resumen_horario([])
             return
         try:
-            materias = self.db_client.table("materias").select("id,nombre").execute().data or []
-            self._mostrar_resumen_horario(resumir_horarios(horarios, materias))
+            self._mostrar_resumen_horario(self.dashboard_controller.obtener_resumen(horarios))
         except Exception:
             self._mostrar_resumen_horario([], "No se pudieron cargar las materias del horario.")
 

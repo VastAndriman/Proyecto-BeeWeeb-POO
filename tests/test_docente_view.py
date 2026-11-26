@@ -16,13 +16,13 @@ class DocenteViewTests(unittest.TestCase):
             )
         }
         vista = SimpleNamespace(
-            **campos, lbl_mensaje=Mock(), creador_docente=Mock(),
-            db=Mock(), cargar_docentes=Mock(return_value=False),
+            **campos, lbl_mensaje=Mock(), controller=Mock(),
+            cargar_docentes=Mock(return_value=False),
         )
 
         DocenteView.guardar_docente(vista)
 
-        vista.creador_docente.registrar.assert_called_once()
+        vista.controller.registrar.assert_called_once()
         self.assertIn("guardado", vista.lbl_mensaje.configure.call_args.kwargs["text"])
         self.assertIn("no se pudo actualizar", vista.lbl_mensaje.configure.call_args.kwargs["text"])
 

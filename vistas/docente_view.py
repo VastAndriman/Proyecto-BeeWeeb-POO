@@ -1,13 +1,11 @@
 import customtkinter as ctk
-from conexion.supabase_client import SupabaseConnection
 from componentes.tabla_busqueda import TablaBusqueda
-from patrones_creacionales_beeweek import CreadorDocente
+from controladores.personas_controller import DocentesController
 
 class DocenteView(ctk.CTkFrame):
-    def __init__(self, master, db_client=None):
+    def __init__(self, master, docentes_controller=None):
         super().__init__(master, fg_color="transparent")
-        self.db = db_client if db_client is not None else SupabaseConnection.get_client()
-        self.creador_docente = CreadorDocente()
+        self.controller = docentes_controller if docentes_controller is not None else DocentesController()
         
         # Header / Título de la vista
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -83,13 +81,12 @@ class DocenteView(ctk.CTkFrame):
             return
             
         try:
-            self.creador_docente.registrar(
+            self.controller.registrar(
                 identificacion=identificacion,
                 nombre=nombre,
                 apellido=apellido,
                 email=email,
                 especialidad=especialidad,
-                db_client=self.db,
             )
             # Limpiar campos
             self.entry_identificacion.delete(0, 'end')
@@ -113,9 +110,7 @@ class DocenteView(ctk.CTkFrame):
     def cargar_docentes(self):
         self.tabla.set_rows([])
         try:
-            client = self.db
-            res = client.table("docentes").select("*").execute()
-            data = res.data if res.data else []
+            data = self.controller.listar()
             self.tabla.set_rows([
                 {
                     "identificacion": item.get("identificacion") or item.get("id", ""),

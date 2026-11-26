@@ -2,6 +2,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+from controladores.dashboard_controller import DashboardController
 from main import BeeWeekApp, resumir_horarios
 
 
@@ -12,7 +13,7 @@ class DashboardTests(unittest.TestCase):
             Mock(select=Mock(return_value=Mock(execute=Mock(return_value=SimpleNamespace(count=2, data=[]))))),
             Mock(select=Mock(return_value=Mock(execute=Mock(return_value=SimpleNamespace(count=3, data=[]))))),
         ]
-        app = SimpleNamespace(db_client=db, card_aulas_val=Mock(),
+        app = SimpleNamespace(dashboard_controller=DashboardController(db), card_aulas_val=Mock(),
                               card_horarios_val=Mock(), lbl_estado_conexion=Mock(),
                               _mostrar_resumen_horario=Mock())
 
@@ -25,7 +26,7 @@ class DashboardTests(unittest.TestCase):
     def test_fallo_de_consulta_no_muestra_conexion_exitosa(self):
         db = Mock()
         db.table.return_value.select.return_value.execute.side_effect = RuntimeError("sin red")
-        app = SimpleNamespace(db_client=db, card_aulas_val=Mock(),
+        app = SimpleNamespace(dashboard_controller=DashboardController(db), card_aulas_val=Mock(),
                               card_horarios_val=Mock(), lbl_estado_conexion=Mock(),
                               _mostrar_resumen_horario=Mock())
 
@@ -48,7 +49,7 @@ class DashboardTests(unittest.TestCase):
                 data=[{"id": 1, "nombre": "POO"}, {"id": 2, "nombre": "Bases de Datos"}]
             ))))),
         ]
-        app = SimpleNamespace(db_client=db, card_aulas_val=Mock(),
+        app = SimpleNamespace(dashboard_controller=DashboardController(db), card_aulas_val=Mock(),
                               card_horarios_val=Mock(), lbl_estado_conexion=Mock(),
                               _mostrar_resumen_horario=Mock())
 
