@@ -59,6 +59,29 @@ class BeeWeekClient:
             "p_role": role,
         }).execute().data
 
+    def catalogo_materias_estudiante(self):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como estudiante")
+        return self._client.rpc("beeweek_student_catalog", {
+            "p_token": self._session_token,
+        }).execute().data
+
+    def inscribir_materia(self, materia_id, curso_id):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como estudiante")
+        return self._client.rpc("beeweek_student_enroll", {
+            "p_token": self._session_token,
+            "p_materia_id": int(materia_id), "p_curso_id": int(curso_id),
+        }).execute().data
+
+    def retirar_materia(self, materia_id, curso_id):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como estudiante")
+        return self._client.rpc("beeweek_student_withdraw", {
+            "p_token": self._session_token,
+            "p_materia_id": int(materia_id), "p_curso_id": int(curso_id),
+        }).execute().data
+
     def table(self, name):
         if name not in ("aulas", "materias", "docentes", "estudiantes", "cursos", "horarios"):
             raise ValueError("Tabla no permitida")
