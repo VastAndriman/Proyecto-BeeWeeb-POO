@@ -43,6 +43,22 @@ class BeeWeekClient:
         if token:
             self._client.rpc("beeweek_logout", {"p_token": token}).execute()
 
+    def listar_usuarios_admin(self):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como administrador")
+        return self._client.rpc("beeweek_admin_list_users", {
+            "p_token": self._session_token,
+        }).execute().data or []
+
+    def cambiar_rol_usuario(self, user_id, role):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como administrador")
+        return self._client.rpc("beeweek_admin_set_role", {
+            "p_token": self._session_token,
+            "p_user_id": int(user_id),
+            "p_role": role,
+        }).execute().data
+
     def table(self, name):
         if name not in ("aulas", "materias", "docentes", "estudiantes", "cursos", "horarios"):
             raise ValueError("Tabla no permitida")

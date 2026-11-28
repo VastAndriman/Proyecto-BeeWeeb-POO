@@ -14,12 +14,14 @@ from vistas.docente_view import DocenteView
 from vistas.estudiante_view import EstudianteView
 from vistas.login_view import LoginView
 from vistas.academico_view import AcademicoView
+from vistas.usuarios_view import UsuariosView
 from controladores.auth_controller import AuthController
 from controladores.horario_controller import HorarioController
 from controladores.academico_controller import AcademicoController
 from controladores.aulas_controller import AulasController
 from controladores.personas_controller import DocentesController, EstudiantesController
 from controladores.dashboard_controller import DashboardController, resumir_horarios
+from controladores.usuarios_controller import UsuariosController
 from conexion.supabase_client import SupabaseConnection
 from componentes.tareas_ui import iniciar_tarea
 
@@ -45,6 +47,7 @@ class BeeWeekApp(ctk.CTk):
         self.docentes_controller = DocentesController(self.db_client)
         self.estudiantes_controller = EstudiantesController(self.db_client)
         self.dashboard_controller = DashboardController(self.db_client)
+        self.usuarios_controller = UsuariosController(self.db_client)
         self.horario_controller.suscribir(self._actualizar_inicio_tras_horario)
         self.horario_controller.suscribir(self._actualizar_calendario_tras_horario)
         self.horario_controller.suscribir(self._invalidar_reporte_tras_horario)
@@ -112,6 +115,7 @@ class BeeWeekApp(ctk.CTk):
         gestion = (
             self.btn_horarios, self.btn_aulas, self.btn_docentes,
             self.btn_estudiantes, self.btn_academico, self.btn_reportes,
+            self.btn_usuarios,
         )
         for boton in gestion:
             if self.rol_actual == "Administrador":
@@ -133,7 +137,7 @@ class BeeWeekApp(ctk.CTk):
         
         self.sidebar_frame = ctk.CTkFrame(self, width=250, corner_radius=0, fg_color="#e8e1fb")
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(10, weight=1)
+        self.sidebar_frame.grid_rowconfigure(11, weight=1)
         
         # Logo y Subtítulo (Reemplazo de la abeja por el cuadro azul)
         assets_dir = os.path.join(os.path.dirname(__file__), "assets")
@@ -180,10 +184,17 @@ class BeeWeekApp(ctk.CTk):
 
         self.btn_reportes = ctk.CTkButton(self.sidebar_frame, text="Reportes", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("reportes"))
         self.btn_reportes.grid(row=9, column=0, padx=15, pady=6, sticky="ew")
+
+        self.btn_usuarios = ctk.CTkButton(
+            self.sidebar_frame, text="Gestión de Usuarios", fg_color="transparent",
+            text_color="#4b3f76", anchor="w", hover_color="#d6c9f3",
+            command=lambda: self.cambiar_vista("usuarios"),
+        )
+        self.btn_usuarios.grid(row=10, column=0, padx=15, pady=6, sticky="ew")
         
         # Footer del Usuario y Cerrar Sesión
         self.lbl_user = ctk.CTkLabel(self.sidebar_frame, text="Usuario\nuleam.edu.ec", font=("Arial", 11), text_color="#786f95", anchor="w", justify="left")
-        self.lbl_user.grid(row=11, column=0, padx=20, pady=(15, 6), sticky="sw")
+        self.lbl_user.grid(row=12, column=0, padx=20, pady=(15, 6), sticky="sw")
 
         self.btn_logout = ctk.CTkButton(
             self.sidebar_frame,
@@ -195,7 +206,7 @@ class BeeWeekApp(ctk.CTk):
             font=("Arial", 12, "bold"),
             command=self.cerrar_sesion
         )
-        self.btn_logout.grid(row=12, column=0, padx=15, pady=(0, 20), sticky="ew")
+        self.btn_logout.grid(row=13, column=0, padx=15, pady=(0, 20), sticky="ew")
 
         # ==========================================
         # 2. CONTENEDOR PRINCIPAL
@@ -221,6 +232,7 @@ class BeeWeekApp(ctk.CTk):
             "estudiantes": lambda: EstudianteView(self.content_area, estudiantes_controller=self.estudiantes_controller),
             "academico": lambda: AcademicoView(self.content_area, academico_controller=self.academico_controller),
             "reportes": lambda: ReportesView(self.content_area, horario_controller=self.horario_controller),
+            "usuarios": lambda: UsuariosView(self.content_area, usuarios_controller=self.usuarios_controller),
         }
         return constructores[nombre_vista]()
 
@@ -409,6 +421,8 @@ class BeeWeekApp(ctk.CTk):
             vista_activa.cargar_docentes()
         elif hasattr(vista_activa, "cargar_estudiantes"):
             vista_activa.cargar_estudiantes()
+        elif hasattr(vista_activa, "cargar_usuarios"):
+            vista_activa.cargar_usuarios()
 
     def _actualizar_inicio_tras_horario(self, _cambio):
         if self.rol_actual is not None and "dashboard" in self.vistas:

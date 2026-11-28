@@ -54,7 +54,7 @@ class PermisosUiTests(unittest.TestCase):
     def test_gestion_se_oculta_para_estudiante_y_se_recupera_para_admin(self):
         botones = {name: Mock() for name in (
             "btn_horarios", "btn_aulas", "btn_docentes",
-            "btn_estudiantes", "btn_academico", "btn_reportes",
+            "btn_estudiantes", "btn_academico", "btn_reportes", "btn_usuarios",
         )}
         app = SimpleNamespace(rol_actual="Estudiante", **botones)
         BeeWeekApp._aplicar_permisos_visuales(app)
@@ -69,7 +69,7 @@ class PermisosUiTests(unittest.TestCase):
     def test_accesos_rapidos_solo_se_muestran_al_administrador(self):
         botones = {name: Mock() for name in (
             "btn_horarios", "btn_aulas", "btn_docentes", "btn_estudiantes",
-            "btn_academico", "btn_reportes",
+            "btn_academico", "btn_reportes", "btn_usuarios",
         )}
         acciones = Mock()
         info = Mock()
