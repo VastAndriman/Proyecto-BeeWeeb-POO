@@ -97,6 +97,36 @@ class BeeWeekClient:
             "p_user_id": int(usuario_id), "p_docente_id": int(docente_id),
         }).execute().data
 
+    def lista_asistencia(self, horario_id, fecha):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como docente")
+        return self._client.rpc("beeweek_attendance_roster", {
+            "p_token": self._session_token, "p_horario_id": int(horario_id),
+            "p_fecha": fecha,
+        }).execute().data or []
+
+    def guardar_asistencia(self, horario_id, fecha, registros):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como docente")
+        return self._client.rpc("beeweek_attendance_save", {
+            "p_token": self._session_token, "p_horario_id": int(horario_id),
+            "p_fecha": fecha, "p_registros": registros,
+        }).execute().data
+
+    def mi_asistencia(self):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como estudiante")
+        return self._client.rpc("beeweek_student_attendance", {
+            "p_token": self._session_token,
+        }).execute().data or []
+
+    def resumen_asistencia(self):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como administrador")
+        return self._client.rpc("beeweek_admin_attendance", {
+            "p_token": self._session_token,
+        }).execute().data or []
+
     def table(self, name):
         if name not in ("aulas", "materias", "docentes", "estudiantes", "cursos", "horarios"):
             raise ValueError("Tabla no permitida")

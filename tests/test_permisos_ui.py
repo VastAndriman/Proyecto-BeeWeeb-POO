@@ -79,11 +79,13 @@ class PermisosUiTests(unittest.TestCase):
         app = SimpleNamespace(rol_actual="Estudiante", **botones)
         app.btn_mis_materias = Mock()
         app.btn_mis_clases = Mock()
+        app.btn_asistencia = Mock()
         BeeWeekApp._aplicar_permisos_visuales(app)
         for boton in botones.values():
             boton.grid_remove.assert_called_once_with()
         app.btn_mis_materias.grid.assert_called_once_with()
         app.btn_mis_clases.grid_remove.assert_called_once_with()
+        app.btn_asistencia.grid.assert_called_once_with(row=5)
 
         app.rol_actual = "Administrador"
         BeeWeekApp._aplicar_permisos_visuales(app)
@@ -91,6 +93,7 @@ class PermisosUiTests(unittest.TestCase):
             boton.grid.assert_called_once_with()
         app.btn_mis_materias.grid_remove.assert_called_once_with()
         app.btn_mis_clases.grid_remove.assert_called_with()
+        app.btn_asistencia.grid.assert_called_with(row=11)
 
     def test_accesos_rapidos_solo_se_muestran_al_administrador(self):
         botones = {name: Mock() for name in (
@@ -105,6 +108,7 @@ class PermisosUiTests(unittest.TestCase):
         )
         app.btn_mis_materias = Mock()
         app.btn_mis_clases = Mock()
+        app.btn_asistencia = Mock()
 
         BeeWeekApp._aplicar_permisos_visuales(app)
         acciones.pack_forget.assert_called_once()
@@ -113,6 +117,18 @@ class PermisosUiTests(unittest.TestCase):
         acciones.pack.assert_called_once_with(
             fill="x", padx=30, pady=(10, 0), before=info,
         )
+
+    def test_cerrar_sesion_descarta_vistas_del_rol_anterior(self):
+        dashboard = Mock()
+        asistencia = Mock()
+        app = SimpleNamespace(
+            auth_controller=Mock(), vistas={"dashboard": dashboard, "asistencia": asistencia},
+            rol_actual="Administrador", mostrar_login=Mock(),
+        )
+        BeeWeekApp.cerrar_sesion(app)
+        self.assertEqual(list(app.vistas), ["dashboard"])
+        asistencia.destroy.assert_called_once_with()
+        app.auth_controller.cerrar_sesion.assert_called_once_with()
 
 
 if __name__ == "__main__":
