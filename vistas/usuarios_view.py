@@ -12,6 +12,8 @@ class UsuariosView(ctk.CTkFrame):
         super().__init__(master, fg_color="transparent")
         self.controller = usuarios_controller
         self.usuarios = {}
+        self.cuentas_docentes = {}
+        self.fichas_docentes = {}
         self._ocupado = False
 
         contenedor = ctk.CTkFrame(self, fg_color="#ffffff", corner_radius=14)
@@ -55,6 +57,31 @@ class UsuariosView(ctk.CTkFrame):
         self.btn_refrescar.pack(side="left")
         self.lbl_estado = ctk.CTkLabel(contenedor, text="", text_color="#786f95")
         self.lbl_estado.pack(anchor="w", padx=24, pady=(0, 22))
+
+        vinculos = ctk.CTkFrame(self, fg_color="#ffffff", corner_radius=14)
+        vinculos.pack(fill="x", padx=30, pady=(0, 20))
+        ctk.CTkLabel(vinculos, text="Vincular cuenta docente",
+                     font=("Arial", 17, "bold"), text_color="#4b3f76").pack(
+                         anchor="w", padx=24, pady=(20, 5))
+        ctk.CTkLabel(
+            vinculos,
+            text="Asocia una cuenta de Docente a su ficha académica para mostrarle sus clases.",
+            text_color="#786f95",
+        ).pack(anchor="w", padx=24, pady=(0, 12))
+        self.selector_cuenta_docente = ctk.CTkOptionMenu(
+            vinculos, values=["Cargando cuentas..."], width=420,
+            fg_color="#7256ac", button_color="#5e4497")
+        self.selector_cuenta_docente.pack(anchor="w", padx=24, pady=(0, 10))
+        self.selector_ficha_docente = ctk.CTkOptionMenu(
+            vinculos, values=["Cargando fichas..."], width=420,
+            fg_color="#7256ac", button_color="#5e4497")
+        self.selector_ficha_docente.pack(anchor="w", padx=24, pady=(0, 12))
+        self.btn_vincular = ctk.CTkButton(
+            vinculos, text="Vincular docente", command=self.vincular_docente,
+            fg_color="#7256ac", hover_color="#5e4497")
+        self.btn_vincular.pack(anchor="w", padx=24, pady=(0, 8))
+        self.lbl_vinculo = ctk.CTkLabel(vinculos, text="", text_color="#786f95")
+        self.lbl_vinculo.pack(anchor="w", padx=24, pady=(0, 18))
         self.cargar_usuarios()
 
     def _seleccionar_usuario(self, etiqueta):
@@ -68,9 +95,14 @@ class UsuariosView(ctk.CTkFrame):
         self._ocupado = True
         self.btn_guardar.configure(state="disabled")
         self.btn_refrescar.configure(state="disabled")
+        self.btn_vincular.configure(state="disabled")
         self.lbl_estado.configure(text="Cargando cuentas...", text_color="#786f95")
 
-        def terminar(cuentas):
+        def consultar():
+            return self.controller.listar(), self.controller.listar_fichas_docentes()
+
+        def terminar(resultado):
+            cuentas, fichas = resultado
             self._ocupado = False
             self.btn_refrescar.configure(state="normal")
             self.usuarios = {
@@ -90,6 +122,23 @@ class UsuariosView(ctk.CTkFrame):
                 self.selector_usuario.set("No hay cuentas activas")
                 self.lbl_estado.configure(text="No hay cuentas disponibles.")
 
+            self.cuentas_docentes = {
+                f"{u['username']} · {u['nombre']} {u['apellido']}": u
+                for u in cuentas if u.get("activo") and u.get("rol") == "Docente"
+            }
+            self.fichas_docentes = {
+                f"{d['nombre']} {d['apellido']} (ID {d['id']})": d
+                for d in fichas
+            }
+            cuentas_opciones = list(self.cuentas_docentes) or ["No hay cuentas docentes"]
+            fichas_opciones = list(self.fichas_docentes) or ["No hay fichas docentes"]
+            self.selector_cuenta_docente.configure(values=cuentas_opciones)
+            self.selector_cuenta_docente.set(cuentas_opciones[0])
+            self.selector_ficha_docente.configure(values=fichas_opciones)
+            self.selector_ficha_docente.set(fichas_opciones[0])
+            self.btn_vincular.configure(
+                state="normal" if self.cuentas_docentes and self.fichas_docentes else "disabled")
+
         def fallar(_error):
             self._ocupado = False
             self.btn_refrescar.configure(state="normal")
@@ -98,7 +147,41 @@ class UsuariosView(ctk.CTkFrame):
                 text_color="#b42333",
             )
 
-        iniciar_tarea(self, self.controller.listar, terminar, fallar)
+        iniciar_tarea(self, consultar, terminar, fallar)
+
+    def vincular_docente(self):
+        if self._ocupado:
+            return
+        cuenta = self.cuentas_docentes.get(self.selector_cuenta_docente.get())
+        ficha = self.fichas_docentes.get(self.selector_ficha_docente.get())
+        if not cuenta or not ficha:
+            return
+        if not messagebox.askyesno(
+            "Confirmar vínculo docente",
+            f"¿Asignar la ficha de {ficha['nombre']} {ficha['apellido']} "
+            f"a la cuenta {cuenta['username']}?",
+            parent=self,
+        ):
+            return
+        self._ocupado = True
+        self.btn_vincular.configure(state="disabled")
+        self.lbl_vinculo.configure(text="Vinculando...", text_color="#786f95")
+
+        def terminar(_resultado):
+            self._ocupado = False
+            self.lbl_vinculo.configure(text="Docente vinculado correctamente.",
+                                       text_color="#15803d")
+            self.cargar_usuarios()
+
+        def fallar(_error):
+            self._ocupado = False
+            self.btn_vincular.configure(state="normal")
+            self.lbl_vinculo.configure(
+                text="No se pudo vincular. Comprueba que la ficha y la cuenta estén disponibles.",
+                text_color="#b42333")
+
+        iniciar_tarea(self, lambda: self.controller.vincular_docente(cuenta["id"], ficha["id"]),
+                     terminar, fallar)
 
     def guardar_rol(self):
         if self._ocupado:

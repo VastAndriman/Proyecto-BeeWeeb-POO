@@ -82,6 +82,21 @@ class BeeWeekClient:
             "p_materia_id": int(materia_id), "p_curso_id": int(curso_id),
         }).execute().data
 
+    def mis_clases_docente(self):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como docente")
+        return self._client.rpc("beeweek_teacher_classes", {
+            "p_token": self._session_token,
+        }).execute().data
+
+    def vincular_cuenta_docente(self, usuario_id, docente_id):
+        if not self._session_token:
+            raise PermissionError("Inicia sesion como administrador")
+        return self._client.rpc("beeweek_admin_link_teacher", {
+            "p_token": self._session_token,
+            "p_user_id": int(usuario_id), "p_docente_id": int(docente_id),
+        }).execute().data
+
     def table(self, name):
         if name not in ("aulas", "materias", "docentes", "estudiantes", "cursos", "horarios"):
             raise ValueError("Tabla no permitida")

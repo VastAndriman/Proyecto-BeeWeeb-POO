@@ -16,6 +16,7 @@ from vistas.login_view import LoginView
 from vistas.academico_view import AcademicoView
 from vistas.usuarios_view import UsuariosView
 from vistas.mis_materias_view import MisMateriasView
+from vistas.mis_clases_view import MisClasesView
 from controladores.auth_controller import AuthController
 from controladores.horario_controller import HorarioController
 from controladores.academico_controller import AcademicoController
@@ -24,6 +25,7 @@ from controladores.personas_controller import DocentesController, EstudiantesCon
 from controladores.dashboard_controller import DashboardController, resumir_horarios
 from controladores.usuarios_controller import UsuariosController
 from controladores.inscripciones_controller import InscripcionesController
+from controladores.clases_docente_controller import ClasesDocenteController
 from conexion.supabase_client import SupabaseConnection
 from componentes.tareas_ui import iniciar_tarea
 
@@ -51,6 +53,7 @@ class BeeWeekApp(ctk.CTk):
         self.dashboard_controller = DashboardController(self.db_client)
         self.usuarios_controller = UsuariosController(self.db_client)
         self.inscripciones_controller = InscripcionesController(self.db_client)
+        self.clases_docente_controller = ClasesDocenteController(self.db_client)
         self.horario_controller.suscribir(self._actualizar_inicio_tras_horario)
         self.horario_controller.suscribir(self._actualizar_calendario_tras_horario)
         self.horario_controller.suscribir(self._invalidar_reporte_tras_horario)
@@ -129,6 +132,10 @@ class BeeWeekApp(ctk.CTk):
             self.btn_mis_materias.grid()
         else:
             self.btn_mis_materias.grid_remove()
+        if self.rol_actual == "Docente":
+            self.btn_mis_clases.grid()
+        else:
+            self.btn_mis_clases.grid_remove()
         acciones = getattr(self, "admin_actions_frame", None)
         if acciones is not None:
             if self.rol_actual == "Administrador":
@@ -183,6 +190,13 @@ class BeeWeekApp(ctk.CTk):
             command=lambda: self.cambiar_vista("mis_materias"),
         )
         self.btn_mis_materias.grid(row=4, column=0, padx=15, pady=6, sticky="ew")
+
+        self.btn_mis_clases = ctk.CTkButton(
+            self.sidebar_frame, text="Mis clases", fg_color="transparent",
+            text_color="#4b3f76", anchor="w", hover_color="#d6c9f3",
+            command=lambda: self.cambiar_vista("mis_clases"),
+        )
+        self.btn_mis_clases.grid(row=4, column=0, padx=15, pady=6, sticky="ew")
         
         self.btn_aulas = ctk.CTkButton(self.sidebar_frame, text="Gestión de Aulas", fg_color="transparent", text_color="#4b3f76", anchor="w", hover_color="#d6c9f3", command=lambda: self.cambiar_vista("aulas"))
         self.btn_aulas.grid(row=5, column=0, padx=15, pady=6, sticky="ew")
@@ -249,6 +263,8 @@ class BeeWeekApp(ctk.CTk):
             "usuarios": lambda: UsuariosView(self.content_area, usuarios_controller=self.usuarios_controller),
             "mis_materias": lambda: MisMateriasView(
                 self.content_area, inscripciones_controller=self.inscripciones_controller),
+            "mis_clases": lambda: MisClasesView(
+                self.content_area, clases_controller=self.clases_docente_controller),
         }
         return constructores[nombre_vista]()
 
@@ -415,6 +431,8 @@ class BeeWeekApp(ctk.CTk):
         permitidas = {"dashboard", "calendario"}
         if self.rol_actual == "Estudiante":
             permitidas.add("mis_materias")
+        if self.rol_actual == "Docente":
+            permitidas.add("mis_clases")
         if self.rol_actual != "Administrador" and nombre_vista not in permitidas:
             nombre_vista = "calendario"
         nueva = nombre_vista not in self.vistas

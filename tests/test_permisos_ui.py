@@ -61,6 +61,16 @@ class PermisosUiTests(unittest.TestCase):
         BeeWeekApp.cambiar_vista(app, "mis_materias")
         app._crear_vista.assert_called_once_with("mis_materias")
 
+    def test_docente_solo_puede_abrir_mis_clases(self):
+        dashboard = SimpleNamespace(pack=Mock(), pack_forget=Mock())
+        clases = SimpleNamespace(pack=Mock(), pack_forget=Mock())
+        app = SimpleNamespace(
+            rol_actual="Docente", vistas={"dashboard": dashboard},
+            _crear_vista=Mock(return_value=clases),
+        )
+        BeeWeekApp.cambiar_vista(app, "mis_clases")
+        app._crear_vista.assert_called_once_with("mis_clases")
+
     def test_gestion_se_oculta_para_estudiante_y_se_recupera_para_admin(self):
         botones = {name: Mock() for name in (
             "btn_horarios", "btn_aulas", "btn_docentes",
@@ -68,16 +78,19 @@ class PermisosUiTests(unittest.TestCase):
         )}
         app = SimpleNamespace(rol_actual="Estudiante", **botones)
         app.btn_mis_materias = Mock()
+        app.btn_mis_clases = Mock()
         BeeWeekApp._aplicar_permisos_visuales(app)
         for boton in botones.values():
             boton.grid_remove.assert_called_once_with()
         app.btn_mis_materias.grid.assert_called_once_with()
+        app.btn_mis_clases.grid_remove.assert_called_once_with()
 
         app.rol_actual = "Administrador"
         BeeWeekApp._aplicar_permisos_visuales(app)
         for boton in botones.values():
             boton.grid.assert_called_once_with()
         app.btn_mis_materias.grid_remove.assert_called_once_with()
+        app.btn_mis_clases.grid_remove.assert_called_with()
 
     def test_accesos_rapidos_solo_se_muestran_al_administrador(self):
         botones = {name: Mock() for name in (
@@ -91,6 +104,7 @@ class PermisosUiTests(unittest.TestCase):
             dashboard_info_frame=info, **botones,
         )
         app.btn_mis_materias = Mock()
+        app.btn_mis_clases = Mock()
 
         BeeWeekApp._aplicar_permisos_visuales(app)
         acciones.pack_forget.assert_called_once()

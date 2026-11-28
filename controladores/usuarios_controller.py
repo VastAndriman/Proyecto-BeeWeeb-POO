@@ -13,3 +13,9 @@ class UsuariosController:
         if rol not in self.ROLES:
             raise ValueError("Selecciona un rol valido")
         return self.db.cambiar_rol_usuario(usuario_id, rol)
+
+    def listar_fichas_docentes(self):
+        return self.db.table("docentes").select("id,nombre,apellido,usuario_id").execute().data or []
+
+    def vincular_docente(self, usuario_id, docente_id):
+        return self.db.vincular_cuenta_docente(usuario_id, docente_id)
